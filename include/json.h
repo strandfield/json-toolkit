@@ -1,17 +1,16 @@
 
-#include <map>
-#include <string>
-#include <vector>
+#if defined(LIBJSON_HAS_CONFIG)
+#  include "json-config.h"
+#else
+#  include "json-default-config.h"
+#endif // defined(LIBJSON_HAS_CONFIG)
+
+#include <memory>
 
 namespace json
 {
 
-using reference_counter_type = int;
-using integer_type = int;
-using number_type = double;
-using string_type = std::string;
-
-enum class ValueType
+enum class JsonType
 {
   Null = 0,
   Boolean,
@@ -22,296 +21,506 @@ enum class ValueType
   Object,
 };
 
-
-namespace detail
+namespace details
 {
 
-class Value
+class Node
 {
 public:
-  reference_counter_type ref;
-public:
-  Value();
-  Value(const Value & other) = delete;
-  virtual ~Value();
+  Node() = default;
+  Node(const Node&) = delete;
+  virtual ~Node() = default;
 
-  virtual ValueType type() const = 0;
-  virtual Value * clone() const = 0;
-  virtual bool eq(const Value & other) const = 0;
+  virtual JsonType type() const = 0;
 
-  Value & operator=(const Value & other) = delete;
+  Node& operator=(const Node&) = delete;
 };
 
-} // namespace detail
+} // namespace details
 
 class Array;
 class Object;
 
-class Value
+class Json
 {
 public:
-  Value();
-  Value(bool b);
-  Value(integer_type n);
-  Value(number_type x);
-  Value(const string_type & str);
-  Value(string_type && str);
-  Value(const Value & other);
-  ~Value();
+  Json();
+  Json(const Json&) = default;
+  ~Json() = default;
 
-  bool isNull() const;
-  ValueType type() const;
+  Json(nullptr_t);
+  Json(bool bval);
+  Json(config::integer_type ival);
+  Json(config::number_type nval);
+  Json(const config::string_type& str);
+  Json(const char* str);
 
-  Value clone() const;
-  
+  inline Json(const std::shared_ptr<details::Node>& impl) : d(impl) { }
+
+  inline JsonType type() const { return d->type(); }
+
+  inline bool isNull() const { return type() == JsonType::Null; }
+  inline bool isBoolean() const { return type() == JsonType::Boolean; }
+  inline bool isInteger() const { return type() == JsonType::Integer; }
+  inline bool isNumber() const { return type() == JsonType::Number; }
+  inline bool isString() const { return type() == JsonType::String; }
+  inline bool isArray() const { return type() == JsonType::Array; }
+  inline bool isObject() const { return type() == JsonType::Object; }
+
+  /* Value interface */
   bool toBool() const;
-  integer_type toInteger() const;
-  number_type toNumber() const;
-  string_type toString() const;
+  config::integer_type toInt() const;
+  config::number_type toNumber() const;
+  const config::string_type& toString() const;
 
+  /* Array interface */
+  int length() const;
+  Json at(int index) const;
+  Json& operator[](int index);
+  void push(const Json& val);
   Array toArray() const;
-  std::size_t length() const;
-  Value getArrayValueAt(int index) const;
-  void push(const Value & val);
-  void insertArrayValueAt(int index, const Value & val);
 
+  /* Object interface */
+  Json& operator[](const config::string_type& key);
+  Json operator[](const config::string_type& key) const;
   Object toObject() const;
-  Value getObjectEntryValue(const std::string & name);
-  void insertObjectEntryValue(const std::string & name, const Value & val);
 
-  Value & operator=(const Value & other);
-  Value & operator=(bool val);
-  Value & operator=(integer_type val);
-  Value & operator=(number_type val);
-  Value & operator=(const char * str);
-  Value & operator=(const string_type & val);
-  Value & operator=(string_type && val);
+  inline const std::shared_ptr<details::Node>& impl() const { return d; }
 
-  Value & operator[](int index);
-  const Value & operator[](int index) const;
+  Json& operator=(const Json&) = default;
 
-  Value & operator[](const std::string & name);
-  const Value & operator[](const std::string & name) const;
+  Json& operator=(nullptr_t);
+  Json& operator=(bool val);
+  Json& operator=(config::integer_type val);
+  Json& operator=(config::number_type val);
+  Json& operator=(const config::string_type& str);
+  Json& operator=(const char* str);
 
-  bool operator==(const std::nullptr_t & rhs) const;
-  bool operator==(bool rhs) const;
-  bool operator==(integer_type rhs) const;
-  bool operator==(number_type rhs) const;
-  bool operator==(const string_type & rhs) const;
-  bool operator==(const Value & other) const;
-  inline bool operator!=(const std::nullptr_t & rhs) const { return !(operator==(rhs)); }
-  inline bool operator!=(const bool & rhs) const { return !(operator==(rhs)); }
-  inline bool operator!=(const integer_type & rhs) const { return !(operator==(rhs)); }
-  inline bool operator!=(const number_type & rhs) const { return !(operator==(rhs)); }
-  inline bool operator!=(const string_type & rhs) const { return !(operator==(rhs)); }
-  inline bool operator!=(const Value & other) const { return !(operator==(other)); }
-
-public:
-  Value(detail::Value *impl);
+  inline bool operator==(nullptr_t) const { return type() == JsonType::Null; }
 
 protected:
-  detail::Value *mImpl;
+  std::shared_ptr<details::Node> d;
 };
 
-inline bool operator==(const std::nullptr_t & lhs, const Value & rhs)
+static const Json null = Json(nullptr);
+
+int compare(const Json& lhs, const Json& rhs);
+
+bool operator==(const Json& lhs, const Json& rhs);
+inline bool operator!=(const Json& lhs, const Json& rhs) { return !(lhs == rhs); }
+
+namespace details
 {
-  return rhs.operator==(lhs);
-}
 
-inline bool operator==(const bool & lhs, const Value & rhs)
-{
-  return rhs.operator==(lhs);
-}
-
-inline bool operator==(const integer_type & lhs, const Value & rhs)
-{
-  return rhs.operator==(lhs);
-}
-
-inline bool operator==(const number_type & lhs, const Value & rhs)
-{
-  return rhs.operator==(lhs);
-}
-
-inline bool operator==(const string_type & lhs, const Value & rhs)
-{
-  return rhs.operator==(lhs);
-}
-
-inline bool operator!=(const std::nullptr_t & lhs, const Value & rhs)
-{
-  return rhs.operator!=(lhs);
-}
-
-inline bool operator!=(const bool & lhs, const Value & rhs)
-{
-  return rhs.operator!=(lhs);
-}
-
-inline bool operator!=(const integer_type & lhs, const Value & rhs)
-{
-  return rhs.operator!=(lhs);
-}
-
-inline bool operator!=(const number_type & lhs, const Value & rhs)
-{
-  return rhs.operator!=(lhs);
-}
-
-inline bool operator!=(const string_type & lhs, const Value & rhs)
-{
-  return rhs.operator!=(lhs);
-}
-
-
-class Array : public Value
+class NullNode : public Node
 {
 public:
-  Array(const Array & other);
-  ~Array();
+  NullNode() = default;
+  ~NullNode() = default;
 
-  typedef std::vector<Value> underlying_type;
+  JsonType type() const override { return JsonType::Null; }
 
-  typename underlying_type::iterator begin();
-  typename underlying_type::const_iterator begin() const;
-
-  typename underlying_type::iterator end();
-  typename underlying_type::const_iterator end() const;
-
-  const underlying_type::value_type & front() const;
-  underlying_type::value_type & front();
-
-  const underlying_type::value_type & back() const;
-  underlying_type::value_type & back();
-
-protected:
-  friend class Value;
-  friend Array newArray();
-  Array(detail::Value *impl);
+  static std::shared_ptr<NullNode> get()
+  {
+    static std::shared_ptr<NullNode> static_instance = std::make_shared<NullNode>();
+    return static_instance;
+  }
 };
 
-Array newArray();
-
-class Object : public Value
-{
-public:
-  typedef std::map<std::string, Value> underlying_type;
-
-  typename underlying_type::iterator begin();
-  typename underlying_type::const_iterator begin() const;
-
-  typename underlying_type::iterator end();
-  typename underlying_type::const_iterator end() const;
-
-protected:
-  friend class Value;
-  friend class Object newObject();
-  Object(detail::Value *impl);
-};
-
-Object newObject();
-
-
-template<typename T>
-Value write(const T & val);
-template<>
-inline Value write<bool>(const bool & b)
-{
-  return Value{ b };
-}
-
-template<typename T>
-T read(const Value & val);
-template<>
-inline bool read<bool>(const Value & val)
-{
-  return val.toBool();
-}
-
-namespace detail
-{
-
-class Boolean : public Value
+class BooleanNode : public Node
 {
 public:
   bool value;
-public:
-  Boolean(bool val);
-  ~Boolean();
 
-  ValueType type() const override;
-  Value * clone() const override;
-  bool eq(const Value & other) const override;
+public:
+  BooleanNode(bool val) : value(val) { }
+  ~BooleanNode() = default;
+
+  JsonType type() const override { return JsonType::Boolean; }
+
+  static std::shared_ptr<BooleanNode> True()
+  {
+    static std::shared_ptr<BooleanNode> static_instance = std::make_shared<BooleanNode>(true);
+    return static_instance;
+  }
+
+  static std::shared_ptr<BooleanNode> False()
+  {
+    static std::shared_ptr<BooleanNode> static_instance = std::make_shared<BooleanNode>(false);
+    return static_instance;
+  }
 };
 
-class Integer : public Value
+class IntegerNode : public Node
 {
 public:
-  integer_type value;
-public:
-  Integer(integer_type val);
-  ~Integer();
+  config::integer_type value;
 
-  ValueType type() const override;
-  Value * clone() const override;
-  bool eq(const Value & other) const override;
+public:
+  IntegerNode(config::integer_type val) : value(val) { }
+  ~IntegerNode() = default;
+
+  JsonType type() const override { return JsonType::Integer; }
 };
 
-class Number : public Value
+class NumberNode : public Node
 {
 public:
-  number_type value;
-public:
-  Number(number_type val);
-  ~Number();
+  config::number_type value;
 
-  ValueType type() const override;
-  Value * clone() const override;
-  bool eq(const Value & other) const override;
+public:
+  NumberNode(config::number_type val) : value(val) { }
+  ~NumberNode() = default;
+
+  JsonType type() const override { return JsonType::Number; }
 };
 
-class String : public Value
+class StringNode : public Node
 {
 public:
-  string_type value;
-public:
-  String(const string_type & val);
-  String(string_type && val);
-  ~String();
+  config::string_type value;
 
-  ValueType type() const override;
-  Value * clone() const override;
-  bool eq(const Value & other) const override;
+public:
+  StringNode(config::string_type val) : value(val) { }
+  ~StringNode() = default;
+
+  JsonType type() const override { return JsonType::String; }
 };
 
-class Array : public Value
+class ArrayNode : public Node
 {
 public:
-  json::Array::underlying_type value;
-public:
-  Array(const json::Array::underlying_type & val);
-  Array(json::Array::underlying_type && val);
-  ~Array();
+  config::array_type<Json> value;
 
-  ValueType type() const override;
-  Value * clone() const override;
-  bool eq(const Value & other) const override;
+public:
+  ArrayNode() = default;
+  ArrayNode(config::array_type<Json>&& val) : value(std::move(val)) { }
+  ~ArrayNode() = default;
+
+  JsonType type() const override { return JsonType::Array; }
 };
 
-class Object : public Value
+class ObjectNode : public Node
 {
 public:
-  json::Object::underlying_type value;
-public:
-  Object(const json::Object::underlying_type & val);
-  Object(json::Object::underlying_type && val);
-  ~Object();
+  config::map_type<config::string_type, Json> value;
 
-  ValueType type() const override;
-  Value * clone() const override;
-  bool eq(const Value & other) const override;
+public:
+  ObjectNode() = default;
+  ObjectNode(config::map_type<config::string_type, Json>&& val) : value(std::move(val)) { }
+  ~ObjectNode() = default;
+
+  JsonType type() const override { return JsonType::Object; }
 };
 
-} // namespace detail
+} // namespace details
+
+class Array : public Json
+{
+public:
+  Array();
+  Array(const Array&) = default;
+  ~Array() = default;
+
+  Array(const std::shared_ptr<details::Node>& impl);
+
+  config::array_type<Json>& data();
+  const config::array_type<Json>& data() const;
+
+  inline config::array_type<Json>& operator*() { return data(); }
+  inline const config::array_type<Json>& operator*() const { return data(); }
+
+  inline config::array_type<Json>* operator->() { return &data(); }
+  inline const config::array_type<Json>* operator->() const { return &data(); }
+
+  Array& operator=(const Array&) = default;
+};
+
+class Object : public Json
+{
+public:
+  Object();
+  Object(const Object&) = default;
+  ~Object() = default;
+
+  Object(const std::shared_ptr<details::Node>& obj);
+
+  config::map_type<config::string_type, Json>& data();
+  const config::map_type<config::string_type, Json>& data() const;
+
+  inline config::map_type<config::string_type, Json>& operator*() { return data(); }
+  inline const config::map_type<config::string_type, Json>& operator*() const { return data(); }
+
+  inline config::map_type<config::string_type, Json>* operator->() { return &data(); }
+  inline const config::map_type<config::string_type, Json>* operator->() const { return &data(); }
+
+  Object& operator=(const Object&) = default;
+};
+
+} // namespace json
+
+#include <cassert>
+#include <stdexcept>
+
+namespace json
+{
+
+inline Json::Json() : d(std::make_shared<details::ObjectNode>()) { }
+inline Json::Json(nullptr_t) : d(details::NullNode::get()) { }
+inline Json::Json(bool bval) : d(std::make_shared<details::BooleanNode>(bval)) { }
+inline Json::Json(config::integer_type ival) : d(std::make_shared<details::IntegerNode>(ival)) { }
+inline Json::Json(config::number_type nval) : d(std::make_shared<details::NumberNode>(nval)) { }
+inline Json::Json(const config::string_type& str) : d(std::make_shared<details::StringNode>(str)) { }
+inline Json::Json(const char* str) : d(std::make_shared<details::StringNode>(str)) { }
+
+inline bool Json::toBool() const
+{
+  assert(isBoolean());
+  return static_cast<const details::BooleanNode*>(d.get())->value;
+}
+
+inline config::integer_type Json::toInt() const
+{
+  assert(isInteger());
+  return static_cast<const details::IntegerNode*>(d.get())->value;
+}
+
+inline config::number_type Json::toNumber() const
+{
+  assert(isNumber());
+  return static_cast<const details::NumberNode*>(d.get())->value;
+}
+
+inline const config::string_type& Json::toString() const
+{
+  assert(isString());
+  return static_cast<const details::StringNode*>(d.get())->value;
+}
+
+inline int Json::length() const
+{
+  assert(isArray());
+  return (int) static_cast<const details::ArrayNode*>(d.get())->value.size();
+}
+
+inline Json Json::at(int index) const
+{
+  assert(isArray());
+  return static_cast<const details::ArrayNode*>(d.get())->value.at(index);
+}
+
+inline Json& Json::operator[](int index)
+{
+  assert(isArray());
+  return static_cast<details::ArrayNode*>(d.get())->value[index];
+}
+
+inline void Json::push(const Json& val)
+{
+  assert(isArray());
+  static_cast<details::ArrayNode*>(d.get())->value.push_back(val);
+}
+
+inline Array Json::toArray() const
+{
+  return Array(d);
+}
+
+inline Json& Json::operator[](const config::string_type& key)
+{
+  assert(isObject());
+  return static_cast<details::ObjectNode*>(d.get())->value[key];
+}
+
+inline Json Json::operator[](const config::string_type& key) const
+{
+  assert(isObject());
+  auto* impl = static_cast<details::ObjectNode*>(d.get());
+  auto it = impl->value.find(key);
+  if (it != impl->value.end())
+    return it->second;
+  return Json();
+}
+
+inline Object Json::toObject() const
+{
+  return Object(d);
+}
+
+inline Json& Json::operator=(nullptr_t)
+{
+  d = details::NullNode::get();
+  return *this;
+}
+
+inline Json& Json::operator=(bool val)
+{
+  d = val ? details::BooleanNode::True() : details::BooleanNode::False();
+  return *this;
+}
+
+inline Json& Json::operator=(config::integer_type val)
+{
+  d = std::make_shared<details::IntegerNode>(val);
+  return *this;
+}
+
+inline Json& Json::operator=(config::number_type val)
+{
+  d = std::make_shared<details::NumberNode>(val);
+  return *this;
+}
+
+inline Json& Json::operator=(const config::string_type& str)
+{
+  d = std::make_shared<details::StringNode>(str);
+  return *this;
+}
+
+inline Json& Json::operator=(const char* str)
+{
+  d = std::make_shared<details::StringNode>(str);
+  return *this;
+}
+
+template<typename T>
+int number_compare(const T* lhs_node, const T* rhs_node)
+{
+  const auto diff = lhs_node->value - rhs_node->value;
+  return (0 < diff) - (diff < 0);
+}
+
+int array_compare(const Array& lhs, const Array& rhs)
+{
+  const int size_diff = lhs.length() - rhs.length();
+
+  if (size_diff != 0)
+    return (0 < size_diff) - (size_diff < 0);
+
+  for (int i(0); i < lhs.length(); ++i)
+  {
+    const int c = json::compare(lhs.at(i), rhs.at(i));
+
+    if (c != 0)
+      return c;
+  }
+
+  return 0;
+}
+
+int object_compare(const Object& lhs, const Object& rhs)
+{
+  const int size_diff = static_cast<int>(lhs.data().size()) - static_cast<int>(rhs.data().size());
+
+  if (size_diff != 0)
+    return (0 < size_diff) - (size_diff < 0);
+
+  auto lhs_it = lhs.data().begin();
+  auto rhs_it = rhs.data().begin();
+
+  for (; lhs_it != lhs.data().end(); ++lhs_it, ++rhs_it)
+  {
+    int c = config::string_compare(lhs_it->first, rhs_it->first);
+
+    if (c != 0)
+      return c;
+
+    c = json::compare(lhs_it->second, rhs_it->second);
+
+    if (c != 0)
+      return c;
+  }
+
+  return 0;
+}
+
+inline int compare(const Json& lhs, const Json& rhs)
+{
+  const int type_diff = static_cast<int>(lhs.type()) - static_cast<int>(rhs.type());
+
+  if (type_diff != 0)
+    return (0 < type_diff) - (type_diff < 0);
+
+  switch (lhs.type())
+  {
+  case JsonType::Null:
+    return 0;
+  case JsonType::Boolean:
+    return static_cast<int>(static_cast<const details::BooleanNode*>(lhs.impl().get())->value)
+      - static_cast<int>(static_cast<const details::BooleanNode*>(rhs.impl().get())->value);
+  case JsonType::Integer:
+    return number_compare(static_cast<const details::IntegerNode*>(lhs.impl().get()), static_cast<const details::IntegerNode*>(rhs.impl().get()));
+  case JsonType::Number:
+    return number_compare(static_cast<const details::NumberNode*>(lhs.impl().get()), static_cast<const details::NumberNode*>(rhs.impl().get()));
+  case JsonType::String:
+    return config::string_compare(lhs.toString(), rhs.toString());
+  case JsonType::Array:
+    return array_compare(lhs.toArray(), rhs.toArray());
+  case JsonType::Object:
+    return object_compare(lhs.toObject(), rhs.toObject());
+  }
+
+  assert(false);
+  throw std::runtime_error{ "json::compare() : corrupted inputs" };
+}
+
+inline bool operator==(const Json& lhs, const Json& rhs)
+{
+  if (lhs.impl() == rhs.impl())
+    return true;
+
+  if (lhs.type() != rhs.type())
+    return false;
+
+  return json::compare(lhs, rhs) == 0;
+}
+
+inline Array::Array() 
+  : Json(std::make_shared<details::ArrayNode>())
+{
+
+}
+
+inline Array::Array(const std::shared_ptr<details::Node>& impl)
+  : Json(impl->type() == JsonType::Array ? impl : details::NullNode::get())
+{
+
+}
+
+inline config::array_type<Json>& Array::data()
+{
+  assert(isArray());
+  return static_cast<details::ArrayNode*>(d.get())->value;
+}
+
+inline const config::array_type<Json>& Array::data() const
+{
+  assert(isArray());
+  return static_cast<const details::ArrayNode*>(d.get())->value;
+}
+
+inline Object::Object()
+  : Json(std::make_shared<details::ObjectNode>())
+{
+
+}
+
+inline Object::Object(const std::shared_ptr<details::Node>& obj)
+  : Json(obj->type() == JsonType::Object ? obj : details::NullNode::get())
+{
+
+}
+
+inline config::map_type<config::string_type, Json>& Object::data()
+{
+  assert(isObject());
+  return static_cast<details::ObjectNode*>(d.get())->value;
+}
+
+inline const config::map_type<config::string_type, Json>& Object::data() const
+{
+  assert(isObject());
+  return static_cast<const details::ObjectNode*>(d.get())->value;
+}
 
 } // namespace json

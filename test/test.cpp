@@ -3,70 +3,38 @@
 
 #include "json.h"
 
-struct Point
+TEST(jsontest, values)
 {
-  int x;
-  int y;
-};
+  json::Json var = nullptr;
+  ASSERT_TRUE(var.isNull());
+  ASSERT_TRUE(var == nullptr);
 
-namespace json
-{
-template<>
-Value write<Point>(const Point & pt)
-{
-  json::Value ret = newObject();
-  ret["x"] = pt.x;
-  ret["y"] = pt.y;
-  return ret;
-}
+  var = 5;
+  ASSERT_TRUE(var.isInteger());
+  ASSERT_EQ(var.toInt(), 5);
+  ASSERT_TRUE(var == 5);
+  ASSERT_FALSE(var == 6);
+  ASSERT_FALSE(var == true);
+  ASSERT_FALSE(var == nullptr);
 
-template<>
-Point read<Point>(const Value & pt)
-{
-  Point ret;
-  ret.x = pt["x"].toInteger();
-  ret.y = pt["y"].toInteger();
-  return ret;
-}
+  var = true;
+  ASSERT_TRUE(var.isBoolean());
 
-}
+  var = 3.0;
+  ASSERT_TRUE(var.isNumber());
 
-TEST(jsontest, types)
-{
-  json::Value v;
-  ASSERT_TRUE(v.isNull());
-  ASSERT_TRUE(v == nullptr);
-
-  v = 5;
-  ASSERT_EQ(v.type(), json::ValueType::Integer);
-  ASSERT_EQ(v.toInteger(), 5);
-  ASSERT_TRUE(v == 5);
-  ASSERT_FALSE(v == 6);
-  ASSERT_FALSE(v == true);
-  ASSERT_FALSE(v == nullptr);
-
-  v = true;
-  ASSERT_EQ(v.type(), json::ValueType::Boolean);
-
-  v = 3.0;
-  ASSERT_EQ(v.type(), json::ValueType::Number);
-
-  v = "Hello World";
-  ASSERT_EQ(v.type(), json::ValueType::String);
-
-  v = json::newArray();
-  ASSERT_EQ(v.type(), json::ValueType::Array);
-  ASSERT_FALSE(v.toArray().isNull());
-
-  v = json::newObject();
-  ASSERT_EQ(v.type(), json::ValueType::Object);
-  ASSERT_FALSE(v.toObject().isNull());
+  var = "Hello World";
+  ASSERT_TRUE(var.isString());
 }
 
 
 TEST(jsontest, arrays)
 {
-  json::Array val = json::newArray();
+  json::Array val = json::Array();
+
+  ASSERT_TRUE(val.isArray());
+  ASSERT_FALSE(val.toArray().isNull());
+
   val.push(true);
   val.push(2);
   ASSERT_EQ(val.length(), 2);
@@ -75,7 +43,7 @@ TEST(jsontest, arrays)
   val[0] = 5;
   ASSERT_EQ(val[0], 5);
 
-  json::Array second = json::newArray();
+  json::Array second = json::Array();
   second.push(5);
   second.push(2);
   ASSERT_EQ(second, val);
@@ -85,45 +53,45 @@ TEST(jsontest, arrays)
   ASSERT_NE(val, true);
   ASSERT_NE(val, 5);
   ASSERT_NE(val, 3.14);
-  ASSERT_NE(val, json::string_type{ "Hello World!" });
+  ASSERT_NE(val, json::Json("Hello World!"));
 
-  second = json::newArray();
+  second = json::Array();
   second.push(1);
   second.push(2);
   second.push(3);
   second.push(4);
   int sum = 0;
-  for (const json::Value & i : second)
-    sum += i.toInteger();
+  for (const json::Json & i : second.data())
+    sum += i.toInt();
   ASSERT_EQ(sum, 10);
-  ASSERT_EQ(second.back(), 4);
-  ASSERT_EQ(second.front(), 1);
+  ASSERT_EQ(second.data().back(), 4);
+  ASSERT_EQ(second.data().front(), 1);
 }
 
 
 TEST(jsontest, objects)
 {
-  json::Value val = json::newObject();
+  json::Json val = json::Object();
+
+  ASSERT_TRUE(val.isObject());
+  ASSERT_FALSE(val.toObject().isNull());
+
   val["two"] = 2;
   val["truth"] = false;
 
   ASSERT_EQ(val["two"], 2);
   ASSERT_FALSE(val["truth"].toBool());
 
-  json::Object obj = val.toObject();
-}
+  json::Json obj = {};
+  obj["foo"]["bar"] = "Hello";
 
-TEST(jsontest, serialization)
-{
-  json::Value val = json::write(true);
-  ASSERT_TRUE(val.type() == json::ValueType::Boolean);
-  bool b = json::read<bool>(val);
-  ASSERT_TRUE(b);
+  ASSERT_EQ(obj["foo"]["bar"].toString(), "Hello");
 
-  Point pt{ 1, 2 };
-  val = json::write(pt);
-  ASSERT_TRUE(val.type() == json::ValueType::Object);
-  pt.x = pt.y = 0;
-  pt = json::read<Point>(val);
-  ASSERT_EQ(pt.x, 1);
+  val = json::Object();
+  val["foo"] = "bar";
+
+  ASSERT_TRUE(obj != val);
+
+  val = json::Array();
+  ASSERT_TRUE(obj != val);
 }
