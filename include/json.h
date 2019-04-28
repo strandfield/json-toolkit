@@ -1,4 +1,7 @@
 
+#ifndef LIBJSON_JSON_H
+#define LIBJSON_JSON_H
+
 #if defined(LIBJSON_HAS_CONFIG)
 #  include "json-config.h"
 #else
@@ -524,3 +527,5 @@ inline const config::map_type<config::string_type, Json>& Object::data() const
 }
 
 } // namespace json
+
+#endif // !LIBJSON_JSON_H
