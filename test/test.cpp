@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "json.h"
+#include "serialization.h"
 
 TEST(jsontest, values)
 {
@@ -95,3 +96,80 @@ TEST(jsontest, objects)
   val = json::Array();
   ASSERT_TRUE(obj != val);
 }
+
+struct Point
+{
+  int x; 
+  int y;
+};
+
+namespace json
+{
+
+namespace serialization
+{
+
+template<>
+struct decoder<Point>
+{
+  static void decode(Serializer& s, const Json& data, Point& pt)
+  {
+    pt.x = data["x"].toInt();
+    pt.y = data["y"].toInt();
+  }
+};
+
+template<>
+struct encoder<Point>
+{
+  static Json encode(Serializer& s, const Point& pt)
+  {
+    Json result = {};
+    result["x"] = pt.x;
+    result["y"] = pt.y;
+    return result;
+  }
+};
+
+} // namespace serialization
+
+} // namespace json
+
+TEST(jsontest, templateSerialization)
+{
+  using namespace json;
+
+  Serializer s;
+
+  {
+    Point pt{ 1, 2 };
+    Json data = s.encode(pt);
+
+    ASSERT_EQ(data["x"], 1);
+    ASSERT_EQ(data["y"], 2);
+
+    data["x"] = 4;
+    pt = s.decode<Point>(data);
+    ASSERT_EQ(pt.x, 4);
+  }
+
+  {
+    config::array_type<Point> pts;
+    pts.push_back(Point{ 1, 2 });
+    pts.push_back(Point{ 3, 4 });
+
+    Json data = s.encode(pts);
+
+    ASSERT_EQ(data.length(), 2);
+
+    ASSERT_TRUE(data[0]["x"] == 1);
+    ASSERT_TRUE(data[1]["y"] == 4);
+
+    data[1]["y"] = 1;
+
+    pts = s.decode<decltype(pts)>(data);
+    ASSERT_EQ(pts.size(), 2);
+    ASSERT_EQ(pts.back().y, 1);
+  }
+}
+
