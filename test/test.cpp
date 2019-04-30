@@ -173,3 +173,28 @@ TEST(jsontest, templateSerialization)
   }
 }
 
+TEST(jsontest, codecSerialization)
+{
+  using namespace json;
+
+  Serializer s;
+
+  {
+    auto* codec = ObjectCodec::create<Point>();
+    codec->addField("xx", &Point::x);
+    codec->addField("yy", &Point::y);
+    s.addCodec(codec);
+  }
+
+  {
+    Point pt{ 1, 2 };
+    Json data = s.encode(pt);
+
+    ASSERT_EQ(data["xx"], 1);
+    ASSERT_EQ(data["yy"], 2);
+
+    data["xx"] = 4;
+    pt = s.decode<Point>(data);
+    ASSERT_EQ(pt.x, 4);
+  }
+}

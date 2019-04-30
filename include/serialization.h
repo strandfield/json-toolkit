@@ -18,10 +18,22 @@ namespace serialization
 {
 
 template<typename T>
-struct decoder;
+struct decoder
+{
+  static void decode(Serializer&, const Json&, T&)
+  {
+    throw std::runtime_error{ "No decoder" };
+  }
+};
 
 template<typename T>
-struct encoder;
+struct encoder
+{
+  static Json encode(Serializer&, const T&)
+  {
+    throw std::runtime_error{ "No encoder" };
+  }
+};
 
 template<>
 struct decoder<bool>
@@ -124,6 +136,8 @@ struct encoder<config::array_type<T>>
 
 } // namespace serialization
 
+class Codec;
+
 class Serializer
 {
 public:
@@ -136,6 +150,26 @@ public:
 
   template<typename T>
   Json encode(const T& value);
+
+  void addCodec(std::unique_ptr<Codec>&& codec);
+  inline void addCodec(Codec* c) { addCodec(std::unique_ptr<Codec>(c)); }
+
+  inline const std::unordered_map<hash_code_t, std::unique_ptr<Codec>>& codecs() const { return m_codecs; }
+
+private:
+  std::unordered_map<hash_code_t, std::unique_ptr<Codec>> m_codecs;
+};
+
+class Codec
+{
+public:
+  Codec() = default;
+  virtual ~Codec() = default;
+
+  virtual hash_code_t hash_code() const = 0;
+
+  virtual void decode(Serializer& serializer, const Json& data, void* value) = 0;
+  virtual Json encode(Serializer& serializer, void* value) = 0;
 };
 
 } // namespace json
@@ -147,14 +181,192 @@ template<typename T>
 inline T Serializer::decode(const Json& obj)
 {
   T result;
+  
+  auto it = codecs().find(typeid(T).hash_code());
+
+  if (it != codecs().end())
+  {
+    it->second->decode(*this, obj, (void*)& result);
+    return result;
+  }
+
   serialization::decoder<T>::decode(*this, obj, result);
+
   return result;
 }
 
 template<typename T>
 inline Json Serializer::encode(const T& value)
 {
+  auto it = codecs().find(typeid(T).hash_code());
+
+  if (it != codecs().end())
+    return it->second->encode(*this, (void*)& value);
+
   return serialization::encoder<T>::encode(*this, value);
+}
+
+inline void Serializer::addCodec(std::unique_ptr<Codec>&& codec)
+{
+  m_codecs[codec->hash_code()] = std::move(codec);
+}
+
+} // namespace json
+
+namespace json
+{
+
+namespace details
+{
+
+class ObjectField
+{
+public:
+  ObjectField(const std::string& mn) : member_name_(mn), optional_(false) { }
+  virtual ~ObjectField() = default;
+
+  virtual void decode_field(Serializer& serializer, const Json& object_data, const Json& field_data, void* value) = 0;
+  virtual Json encode_field(Serializer& serializer, void* value) = 0;
+
+  std::string member_name_;
+  bool optional_;
+};
+
+template<typename T, typename M>
+class SimpleMemberField : public ObjectField
+{
+public:
+  M T::*member;
+
+public:
+  SimpleMemberField(const std::string& mn, M T::*mem_ptr) : ObjectField(mn), member(mem_ptr) { }
+  ~SimpleMemberField() = default;
+
+  void decode_field(Serializer& serializer, const Json& object_data, const Json& field_data, void* value) override
+  {
+    T& object = *static_cast<T*>(value);
+    object.*member = serializer.decode<M>(field_data);
+  }
+
+  Json encode_field(Serializer& serializer, void* value) override
+  {
+    const T& object = *static_cast<const T*>(value);
+    return serializer.encode(object.*member);
+  }
+};
+
+template<typename T, typename M>
+class MemberField : public ObjectField
+{
+public:
+  M(T::*getter)() const;
+  void(T::*setter)(const M&);
+
+public:
+  MemberField(const std::string& mn, M(T::*get)() const, void(T::*set)(const M&)) : ObjectField(mn), getter(get), setter(set) { }
+  ~MemberField() = default;
+
+  void decode_field(Serializer& serializer, const Json& object_data, const Json& field_data, void* value) override
+  {
+    T& object = *static_cast<T*>(value);
+    (object.*setter)(serializer.decode<M>(field_data));
+  }
+
+  Json encode_field(Serializer& serializer, void* value) override
+  {
+    const T& object = *static_cast<const T*>(value);
+    return serializer.encode((object.*getter)());
+  }
+};
+
+} // namespace details
+
+class ObjectCodec : public Codec
+{
+public:
+  template<typename T>
+  static ObjectCodec* create();
+
+  inline const std::map<std::string, std::unique_ptr<details::ObjectField>>& fields() const { return m_fields; }
+
+  template<typename T, typename M>
+  void addField(const std::string& name, M T::*member);
+
+  template<typename T, typename M>
+  void addField(const std::string& name, M(T::*getter)() const, void (T::*setter)(const M&));
+
+protected:
+  std::map<std::string, std::unique_ptr<details::ObjectField>> m_fields;
+};
+
+template<typename T>
+class GenericObjectCodec : public ObjectCodec
+{
+public:
+
+  hash_code_t hash_code() const override { return typeid(T).hash_code(); }
+
+  void decode(Serializer& serializer, const Json& data, void* value) override
+  {
+    T& object = *static_cast<T*>(value);
+
+    for (auto it = fields().begin(); it != fields().end(); ++it)
+    {
+      details::ObjectField* field = it->second.get();
+
+      Json field_data = data[field->member_name_];
+
+      if (field_data.isNull())
+      {
+        if (!field->optional_)
+          throw std::runtime_error{ "Missing required field" };
+      }
+      else
+      {
+        field->decode_field(serializer, data, field_data, value);
+      }
+    }
+  }
+
+  Json encode(Serializer& serializer, void* value) override
+  {
+    const T& object = *static_cast<T*>(value);
+
+    Json result = {};
+
+    for (auto it = fields().begin(); it != fields().end(); ++it)
+    {
+      details::ObjectField* field = it->second.get();
+      result[field->member_name_] = field->encode_field(serializer, value);
+    }
+
+    return result;
+  }
+};
+
+} // namespace json
+
+namespace json
+{
+
+template<typename T>
+inline ObjectCodec* ObjectCodec::create()
+{
+  return new GenericObjectCodec<T>();
+}
+
+template<typename T, typename M>
+inline void ObjectCodec::addField(const std::string& name, M T::*member)
+{
+  assert(hash_code() == typeid(T).hash_code());
+  m_fields[name] = std::unique_ptr<details::ObjectField>(new details::SimpleMemberField<T, M>(name, member));
+}
+
+template<typename T, typename M>
+inline void ObjectCodec::addField(const std::string& name, M(T::*getter)() const, void (T::*setter)(const M&))
+{
+  assert(hash_code() == typeid(T).hash_code());
+  m_fields[name] = std::unique_ptr<details::ObjectField>(new details::MemberField<T, M>(name, getter, setter));
 }
 
 } // namespace json
