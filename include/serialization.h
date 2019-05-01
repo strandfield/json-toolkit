@@ -255,15 +255,15 @@ public:
   }
 };
 
-template<typename T, typename M>
+template<typename T, typename M, typename Getter, typename Setter>
 class MemberField : public ObjectField
 {
 public:
-  M(T::*getter)() const;
-  void(T::*setter)(const M&);
+  Getter getter;
+  Setter setter;
 
 public:
-  MemberField(const std::string& mn, M(T::*get)() const, void(T::*set)(const M&)) : ObjectField(mn), getter(get), setter(set) { }
+  MemberField(const std::string& mn, Getter get, Setter set) : ObjectField(mn), getter(get), setter(set) { }
   ~MemberField() = default;
 
   void decode_field(Serializer& serializer, const Json& object_data, const Json& field_data, void* value) override
@@ -293,7 +293,7 @@ public:
   void addField(const std::string& name, M T::*member);
 
   template<typename T, typename M>
-  void addField(const std::string& name, M(T::*getter)() const, void (T::*setter)(const M&));
+  void addField(const std::string& name, M(T::*getter)() const, void (T::*setter)(M));
 
 protected:
   std::map<std::string, std::unique_ptr<details::ObjectField>> m_fields;
@@ -363,10 +363,11 @@ inline void ObjectCodec::addField(const std::string& name, M T::*member)
 }
 
 template<typename T, typename M>
-inline void ObjectCodec::addField(const std::string& name, M(T::*getter)() const, void (T::*setter)(const M&))
+inline void ObjectCodec::addField(const std::string& name, M(T::*getter)() const, void (T::*setter)(M))
 {
   assert(hash_code() == typeid(T).hash_code());
-  m_fields[name] = std::unique_ptr<details::ObjectField>(new details::MemberField<T, M>(name, getter, setter));
+  using BaseMemberType = typename std::remove_const<typename std::remove_reference<M>::type>::type;
+  m_fields[name] = std::unique_ptr<details::ObjectField>(new details::MemberField<T, BaseMemberType, decltype(getter), decltype(setter)>(name, getter, setter));
 }
 
 } // namespace json

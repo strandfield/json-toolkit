@@ -173,6 +173,18 @@ TEST(jsontest, templateSerialization)
   }
 }
 
+struct Line
+{
+  Point p1;
+  Point p2;
+
+  const Point& getP1() const { return p1; }
+  Point getP2() const { return p2; }
+
+  void setP1(const Point& p) { p1 = p; }
+  void setP2(Point p) { p2 = p; }
+};
+
 TEST(jsontest, codecSerialization)
 {
   using namespace json;
@@ -196,5 +208,30 @@ TEST(jsontest, codecSerialization)
     data["xx"] = 4;
     pt = s.decode<Point>(data);
     ASSERT_EQ(pt.x, 4);
+  }
+
+  {
+    auto* codec = ObjectCodec::create<Line>();
+    codec->addField("p1", &Line::getP1, &Line::setP1);
+    codec->addField("p2", &Line::getP2, &Line::setP2);
+    s.addCodec(codec);
+  }
+
+  {
+    Line line;
+    line.p1 = Point{ 1, 2 };
+    line.p2 = Point{ 3, 4 };
+
+    Json data = s.encode<Line>(line);
+
+    ASSERT_TRUE(data["p1"] != nullptr);
+    ASSERT_TRUE(data["p2"] != nullptr);
+
+    ASSERT_EQ(data["p1"]["xx"], 1);
+    ASSERT_EQ(data["p2"]["yy"], 4);
+
+    data["p2"]["yy"] = 5;;
+    line = s.decode<Line>(data);
+    ASSERT_EQ(line.p2.y, 5);
   }
 }
