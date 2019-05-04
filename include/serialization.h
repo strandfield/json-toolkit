@@ -142,7 +142,7 @@ class Serializer
 {
 public:
   Serializer() = default;
-  Serializer(const Serializer&) = default;
+  Serializer(const Serializer&) = delete;
   ~Serializer() = default;
 
   template<typename T>
