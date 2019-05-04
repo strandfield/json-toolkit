@@ -7,6 +7,10 @@
 #include <unordered_map>
 #include <stdexcept>
 
+#if __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+#include <variant>
+#endif // __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+
 namespace json
 {
 
@@ -135,6 +139,62 @@ struct encoder<config::array_type<T>>
 };
 
 } // namespace serialization
+
+#if __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+
+namespace serialization
+{
+
+template<typename VariantType, size_t Index>
+struct variant_decoder;
+
+template<typename...Args, size_t Index>
+struct variant_decoder<std::variant<Args...>, Index>
+{
+  static void decode(Serializer& s, size_t index, const Json& data, std::variant<Args...>& value)
+  {
+    if constexpr (Index == sizeof...(Args))
+    {
+      throw std::runtime_error{ "Could not decode variant" };
+    }
+    else
+    {
+      using Type = std::variant_alternative_t<Index, std::variant<Args...>>;
+
+      if (index == Index)
+        value = s.decode<Type>(data);
+      else
+        variant_decoder<std::variant<Args...>, Index + 1>::decode(s, index, data, value);
+    }
+  }
+};
+
+template<typename...Args>
+struct decoder<std::variant<Args...>>
+{
+  static void decode(Serializer& s, const Json& data, std::variant<Args...>& value)
+  {
+    variant_decoder<std::variant<Args...>, 0>::decode(s, data["index"].toInt(), data["value"], value);
+  }
+};
+
+template<typename...Args>
+struct encoder<std::variant<Args...>>
+{
+  static Json encode(Serializer& s, const std::variant<Args...>& values)
+  {
+    Json result = {};
+    result["index"] = (config::integer_type) values.index();
+    result["value"] = std::visit([&s](const auto & val) -> Json {
+      return s.encode(val);
+    }, values);
+    return result;
+  }
+};
+
+} // namespace serialization
+
+#endif // __cplusplus >= 201703L || defined(LIBJSON_CPP17)
 
 class Codec;
 

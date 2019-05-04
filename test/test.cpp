@@ -4,6 +4,10 @@
 #include "json.h"
 #include "serialization.h"
 
+#if __cplusplus >= 201703L
+#include <variant>
+#endif
+
 TEST(jsontest, values)
 {
   json::Json var = nullptr;
@@ -235,3 +239,46 @@ TEST(jsontest, codecSerialization)
     ASSERT_EQ(line.p2.y, 5);
   }
 }
+
+#if __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+
+TEST(jsontest, variantSerialization)
+{
+  using namespace json;
+
+  Serializer s;
+
+  {
+    std::variant<int, Point> value = 5;
+
+    Json data = s.encode(value);
+
+    ASSERT_EQ(data["index"].toInt(), 0);
+    ASSERT_EQ(data["value"].toInt(), 5);
+
+    data["value"] = 6;
+
+    value = s.decode<decltype(value)>(data);
+
+    ASSERT_TRUE(std::holds_alternative<int>(value));
+    ASSERT_EQ(std::get<int>(value), 6);
+  }
+
+  {
+    std::variant<int, Point> value = Point{ 1, 2 };
+
+    Json data = s.encode(value);
+
+    ASSERT_EQ(data["index"].toInt(), 1);
+    ASSERT_EQ(data["value"]["x"], 1);
+
+    data["value"]["y"] = 3;
+
+    value = s.decode<decltype(value)>(data);
+
+    ASSERT_TRUE(std::holds_alternative<Point>(value));
+    ASSERT_EQ(std::get<Point>(value).y, 3);
+  }
+}
+
+#endif // __cplusplus >= 201703L || defined(LIBJSON_CPP17)
