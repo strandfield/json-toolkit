@@ -8,6 +8,7 @@
 #include <stdexcept>
 
 #if __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+#include <optional>
 #include <variant>
 #endif // __cplusplus >= 201703L || defined(LIBJSON_CPP17)
 
@@ -189,6 +190,39 @@ struct encoder<std::variant<Args...>>
       return s.encode(val);
     }, values);
     return result;
+  }
+};
+
+} // namespace serialization
+
+#endif // __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+
+#if __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+
+namespace serialization
+{
+
+template<typename T>
+struct decoder<std::optional<T>>
+{
+  static void decode(Serializer& s, const Json& data, std::optional<T>& value)
+  {
+    if (data.isNull())
+      return;
+
+    value = s.decode<T>(data);
+  }
+};
+
+template<typename T>
+struct encoder<std::optional<T>>
+{
+  static Json encode(Serializer& s, const std::optional<T>& value)
+  {
+    if (!value.has_value())
+      return Json(nullptr);
+
+    return s.encode(value.value());
   }
 };
 

@@ -282,3 +282,42 @@ TEST(jsontest, variantSerialization)
 }
 
 #endif // __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+
+#if __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+
+TEST(jsontest, optionalSerialization)
+{
+  using namespace json;
+
+  Serializer s;
+
+  {
+    std::optional<Point> value;
+
+    Json data = s.encode(value);
+
+    ASSERT_TRUE(data.isNull());
+
+    value = s.decode<decltype(value)>(data);
+
+    ASSERT_FALSE(value.has_value());
+  }
+
+
+  {
+    std::optional<Point> value = Point{ 1, 2 };
+
+    Json data = s.encode(value);
+
+    ASSERT_EQ(data["x"], 1);
+    
+    data["y"] = 3;
+
+    value = s.decode<decltype(value)>(data);
+
+    ASSERT_TRUE(value.has_value());
+    ASSERT_EQ(value.value().y, 3);
+  }
+}
+
+#endif // __cplusplus >= 201703L || defined(LIBJSON_CPP17)
