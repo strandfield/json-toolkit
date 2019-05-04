@@ -393,7 +393,7 @@ int number_compare(const T* lhs_node, const T* rhs_node)
   return (0 < diff) - (diff < 0);
 }
 
-int array_compare(const Array& lhs, const Array& rhs)
+inline int array_compare(const Array& lhs, const Array& rhs)
 {
   const int size_diff = lhs.length() - rhs.length();
 
@@ -411,7 +411,7 @@ int array_compare(const Array& lhs, const Array& rhs)
   return 0;
 }
 
-int object_compare(const Object& lhs, const Object& rhs)
+inline int object_compare(const Object& lhs, const Object& rhs)
 {
   const int size_diff = static_cast<int>(lhs.data().size()) - static_cast<int>(rhs.data().size());
 
