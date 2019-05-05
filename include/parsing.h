@@ -18,6 +18,7 @@ enum class TokenType {
   Comma,
   True,
   False,
+  Integer,
   Number,
   StringLiteral,
 };
@@ -305,7 +306,7 @@ protected:
     case CharCategory::Comma:
     case CharCategory::SingleQuote:
     case CharCategory::DoubleQuote:
-      produce(TokenType::Number);
+      produce(TokenType::Integer);
       enter(TokenizerState::Idle);
       StateIdle(c, cc);
       return;
@@ -466,5 +467,266 @@ private:
 
 } // namespace json
 
+namespace json
+{
+/*
+struct ParserBackend
+{
+  static config::number_type parse_integer(const config::string_type& str);
+  static config::number_type parse_number(const config::string_type& str);
+  static config::string_type remove_quotes(const config::string_type& str);
+
+  void value(nullptr_t);
+  void value(bool val);
+  void value(int val);
+  void value(config::number_type val);
+  void value(const config::string_type& str);
+
+  void start_object();
+  void key(const config::string_type& str);
+  void end_object();
+
+  void start_array();
+  void end_array();
+};
+*/
+
+enum class ParserState {
+  Idle = 0,
+  ParsingObject,
+  ReadFieldName,
+  ReadFieldColon,
+  ReadFieldValue,
+  ParsingArray,
+  ReadArrayElement,
+  ReadArraySeparator,
+};
+
+template<typename Backend>
+//using Backend = ParserBackend;
+class ParserMachine
+{
+public:
+  ParserMachine()
+  {
+    m_states.push_back(ParserState::Idle);
+  }
+
+  ~ParserMachine() = default;
+
+  inline ParserState state() const { return m_states.back(); }
+  inline const std::vector<ParserState>& stack() const { return m_states; }
+
+  inline Backend& backend() { return m_backend; }
+  inline std::vector<Token> & buffer() { return m_buffer; }
+
+  void write(const Token& tok)
+  {
+    switch (state())
+    {
+    case ParserState::Idle: return StateIdle(tok);
+    case ParserState::ParsingObject: return StateParsingObject(tok);
+    case ParserState::ReadFieldName: return StateReadFieldName(tok);
+    case ParserState::ReadFieldColon: return StateReadFieldColon(tok);
+    case ParserState::ReadFieldValue: return StateReadFieldValue(tok);
+    case ParserState::ParsingArray: return StateParsingArray(tok);
+    case ParserState::ReadArrayElement: return StateReadArrayElement(tok);
+    case ParserState::ReadArraySeparator: return StateReadArraySeparator(tok);
+    }
+  }
+
+protected:
+
+  void enter(ParserState s)
+  {
+    m_states.push_back(s);
+  }
+
+  void update(ParserState s)
+  {
+    m_states.back() = s;
+  }
+
+  void leave()
+  {
+    m_states.pop_back();
+
+    if (m_states.back() == ParserState::ReadFieldColon)
+      m_states.back() = ParserState::ReadFieldValue;
+    else if (m_states.back() == ParserState::ParsingArray)
+      m_states.back() = ParserState::ReadArrayElement;
+  }
+
+  void StateIdle(const Token& tok)
+  {
+    switch (tok.type)
+    {
+    case TokenType::LBrace:
+      m_backend.start_object();
+      enter(ParserState::ParsingObject);
+      return;
+    case TokenType::LBracket:
+      m_backend.start_array();
+      enter(ParserState::ParsingArray);
+      return;
+    default:
+      throw std::runtime_error{ "Invalid input in 'Idle' state" };
+      break;
+    }
+  }
+
+  void StateParsingObject(const Token& tok)
+  {
+    switch (tok.type)
+    {
+    case TokenType::Identifier:
+    case TokenType::StringLiteral:
+      m_backend.key(tok.text);
+      update(ParserState::ReadFieldName);
+      return;
+    case TokenType::RBrace:
+      m_backend.end_object();
+      leave();
+      return;
+    default:
+      throw std::runtime_error{ "Invalid input in 'ParsingObject' state" };
+      break;
+    }
+  }
+
+  void StateReadFieldName(const Token& tok)
+  {
+    switch (tok.type)
+    {
+    case TokenType::Colon:
+      update(ParserState::ReadFieldColon);
+      return;
+    default:
+      throw std::runtime_error{ "Invalid input in 'ReadFieldName' state" };
+      break;
+    }
+  }
+
+  void StateReadFieldColon(const Token& tok)
+  {
+    switch (tok.type)
+    {
+    case TokenType::LBrace:
+      m_backend.start_object();
+      enter(ParserState::ParsingObject);
+      return;
+    case TokenType::LBracket:
+      m_backend.start_array();
+      enter(ParserState::ParsingArray);
+      return;
+    case TokenType::True:
+    case TokenType::False:
+      m_backend.value(tok.type == TokenType::True);
+      update(ParserState::ReadFieldValue);
+      return;
+    case TokenType::Integer:
+      m_backend.value(m_backend.parse_integer(tok.text));
+      update(ParserState::ReadFieldValue);
+      return;
+    case TokenType::Number:
+      m_backend.value(m_backend.parse_number(tok.text));
+      update(ParserState::ReadFieldValue);
+      return;
+    case TokenType::StringLiteral:
+      m_backend.value(m_backend.remove_quotes(tok.text));
+      update(ParserState::ReadFieldValue);
+      return;
+    default:
+      throw std::runtime_error{ "Invalid input in 'ReadFieldColon' state" };
+      break;
+    }
+  }
+
+  void StateReadFieldValue(const Token& tok)
+  {
+    switch (tok.type)
+    {
+    case TokenType::Comma:
+      update(ParserState::ParsingObject);
+      return;
+    case TokenType::RBrace:
+      m_backend.end_object();
+      leave();
+      return;
+    default:
+      throw std::runtime_error{ "Invalid input in 'ReadFieldValue' state" };
+      break;
+    }
+  }
+
+  void StateParsingArray(const Token& tok)
+  {
+    switch (tok.type)
+    {
+    case TokenType::LBrace:
+      m_backend.start_object();
+      enter(ParserState::ParsingObject);
+      return;
+    case TokenType::LBracket:
+      m_backend.start_array();
+      enter(ParserState::ParsingArray);
+      return;
+    case TokenType::True:
+    case TokenType::False:
+      m_backend.value(tok.type == TokenType::True);
+      update(ParserState::ReadArrayElement);
+      return;
+    case TokenType::Integer:
+      m_backend.value(m_backend.parse_integer(tok.text));
+      update(ParserState::ReadArrayElement);
+      return;
+    case TokenType::Number:
+      m_backend.value(m_backend.parse_number(tok.text));
+      update(ParserState::ReadArrayElement);
+      return;
+    case TokenType::StringLiteral:
+      m_backend.value(m_backend.remove_quotes(tok.text));
+      update(ParserState::ReadArrayElement);
+      return;
+    case TokenType::RBracket:
+      m_backend.end_array();
+      leave();
+      return;
+    default:
+      throw std::runtime_error{ "Invalid input in 'ParsingArray' state" };
+      break;
+    }
+  }
+
+  void StateReadArrayElement(const Token& tok)
+  {
+    switch (tok.type)
+    {
+    case TokenType::RBracket:
+      m_backend.end_array();
+      leave();
+      return;
+    case TokenType::Comma:
+      update(ParserState::ReadArraySeparator);
+      return;
+    default:
+      throw std::runtime_error{ "Invalid input in 'ReadArrayElement' state" };
+      break;
+    }
+  }
+
+  void StateReadArraySeparator(const Token& tok)
+  {
+    update(ParserState::ParsingArray);
+    return StateParsingArray(tok);
+  }
+
+private:
+  Backend m_backend;
+  std::vector<ParserState> m_states;
+  std::vector<Token> m_buffer;
+};
+
+} // namespace json
 
 #endif // !LIBJSON_PARSING_H
