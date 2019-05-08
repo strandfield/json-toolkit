@@ -7,6 +7,10 @@
 namespace json
 {
 
+#if defined(JSON_HAS_DEFAULT_PARSER_BACKEND)
+json::Json parse(const config::string_type& str);
+#endif // defined(JSON_HAS_DEFAULT_PARSER_BACKEND)
+
 enum class TokenType {
   Invalid = 0,
   Identifier,
@@ -16,6 +20,7 @@ enum class TokenType {
   RBracket,
   Colon,
   Comma,
+  Null,
   True,
   False,
   Integer,
@@ -50,28 +55,6 @@ inline bool operator!=(const Token& lhs, const Token& rhs)
   return !(lhs == rhs);
 }
 
-enum class CharCategory {
-  Invalid = 0,
-  Space,
-  NewLine,
-  LBrace,
-  RBrace,
-  LBracket,
-  RBracket,
-  Colon,
-  Comma,
-  Dot,
-  Underscore,
-  Letter,
-  Digit,
-  PlusSign,
-  MinusSign,
-  ExponentSymbol,
-  SingleQuote,
-  DoubleQuote,
-  Other,
-};
-
 /*
 struct TokenizerBackend
 {
@@ -79,6 +62,7 @@ struct TokenizerBackend
   typedef char char_type;
 
   static CharCategory category(char_type c);
+  static bool is_null(const string_type& str);
   static bool is_bool(const string_type& str, bool* value);
   static char_type new_line();
 
@@ -170,6 +154,8 @@ protected:
 
     if (m_backend.is_bool(m_buffer, &value))
       produce(value ? TokenType::True : TokenType::False);
+    else if (m_backend.is_null(m_buffer))
+      produce(TokenType::Null);
     else
       produce(TokenType::Identifier);
   }
@@ -619,6 +605,10 @@ protected:
       m_backend.start_array();
       enter(ParserState::ParsingArray);
       return;
+    case TokenType::Null:
+      m_backend.value(nullptr);
+      update(ParserState::ReadFieldValue);
+      return;
     case TokenType::True:
     case TokenType::False:
       m_backend.value(tok.type == TokenType::True);
@@ -670,6 +660,10 @@ protected:
     case TokenType::LBracket:
       m_backend.start_array();
       enter(ParserState::ParsingArray);
+      return;
+    case TokenType::Null:
+      m_backend.value(nullptr);
+      update(ParserState::ReadArrayElement);
       return;
     case TokenType::True:
     case TokenType::False:
@@ -728,5 +722,33 @@ private:
 };
 
 } // namespace json
+
+#if defined(JSON_HAS_DEFAULT_PARSER_BACKEND)
+
+#include "json-default-parser-backend.h"
+
+namespace json
+{
+
+inline json::Json parse(const config::string_type& str)
+{
+  Tokenizer<config::DefaultTokenizerBackend> tokenizer;
+  auto& buffer = tokenizer.backend().token_buffer;
+  tokenizer.write(str);
+  tokenizer.done();
+
+  ParserMachine<config::DefaultParserBackend> parser;
+  
+  for (const auto& tok : buffer)
+  {
+    parser.write(tok);
+  }
+
+  return parser.backend().stack.front();
+}
+
+} // namespace json
+
+#endif // defined(JSON_HAS_DEFAULT_PARSER_BACKEND))
 
 #endif // !LIBJSON_PARSING_H

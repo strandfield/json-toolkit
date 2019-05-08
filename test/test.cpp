@@ -2,7 +2,9 @@
 #include <gtest/gtest.h>
 
 #include "json.h"
+#include "parsing.h"
 #include "serialization.h"
+#include "stringify.h"
 
 #if __cplusplus >= 201703L
 #include <variant>
@@ -189,6 +191,13 @@ struct Line
   void setP2(Point p) { p2 = p; }
 };
 
+struct Point3D
+{
+  int x;
+  int y;
+  int z;
+};
+
 TEST(jsontest, codecSerialization)
 {
   using namespace json;
@@ -237,6 +246,11 @@ TEST(jsontest, codecSerialization)
     data["p2"]["yy"] = 5;;
     line = s.decode<Line>(data);
     ASSERT_EQ(line.p2.y, 5);
+  }
+
+  {
+    Point3D pt;
+    ASSERT_ANY_THROW(s.encode(pt));
   }
 }
 
@@ -321,3 +335,27 @@ TEST(jsontest, optionalSerialization)
 }
 
 #endif // __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+
+TEST(jsontest, stringify)
+{
+  using namespace json;
+
+  json::Object obj = Object();
+
+  obj["integer"] = 1;
+  obj["number"] = 3.14;
+  obj["string"] = "Hello World!";
+  obj["invalid"] = nullptr;
+  obj["boolean"] = true;
+  obj["array"] = json::Array();
+  obj["array"].push(1);
+  obj["array"].push(2);
+
+  std::string str = json::stringify(obj);
+
+  std::cout << str << std::endl;
+
+  json::Object parsed = json::parse(str).toObject();
+
+  ASSERT_EQ(obj, parsed);
+}

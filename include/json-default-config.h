@@ -1,7 +1,13 @@
 
 #include <map>
 #include <string>
+#include <sstream>
 #include <vector>
+
+#include "json-global-defs.h"
+
+#define JSON_HAS_DEFAULT_PARSER_BACKEND
+#define JSON_HAS_DEFAULT_WRITER_BACKEND
 
 namespace json
 {
@@ -27,3 +33,4 @@ inline int string_compare(const string_type& lhs, const string_type& rhs)
 } // namespace config
 
 } // namespace json
+

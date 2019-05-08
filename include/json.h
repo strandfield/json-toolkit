@@ -2,6 +2,8 @@
 #ifndef LIBJSON_JSON_H
 #define LIBJSON_JSON_H
 
+#include "json-global-defs.h"
+
 #if defined(LIBJSON_HAS_CONFIG)
 #  include "json-config.h"
 #else
