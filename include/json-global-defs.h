@@ -1,5 +1,9 @@
-#ifndef LIBJSON_GLOBAL_DEFS_H
-#define LIBJSON_GLOBAL_DEFS_H
+// Copyright (C) 2019 Vincent Chambrin
+// This file is part of the json-toolkit library
+// For conditions of distribution and use, see copyright notice in LICENSE
+
+#ifndef JSONTOOLKIT_GLOBAL_DEFS_H
+#define JSONTOOLKIT_GLOBAL_DEFS_H
 
 #include <map>
 #include <string>
@@ -32,4 +36,4 @@ enum class CharCategory {
 
 } // namespace json
 
-#endif // !LIBJSON_GLOBAL_DEFS_H
+#endif // !JSONTOOLKIT_GLOBAL_DEFS_H

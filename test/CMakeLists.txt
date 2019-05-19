@@ -8,11 +8,9 @@ execute_process(COMMAND "${CMAKE_COMMAND}" --build .
 set(GTEST_DIR "${CMAKE_BINARY_DIR}/googletest-src/googletest" CACHE PATH "Root directory for GoogleTest")
 
 add_executable(tests test.cpp tests-parsing.cpp ${GTEST_DIR}/src/gtest-all.cc ${GTEST_DIR}/src/gtest_main.cc)
-add_dependencies(tests libjson)
+add_dependencies(tests json-toolkit)
 target_include_directories(tests PUBLIC "${GTEST_DIR}/include")
 target_include_directories(tests PRIVATE "${GTEST_DIR}")
 target_include_directories(tests PUBLIC "../include")
-target_link_libraries(tests libjson)
-
 
 add_test(libjsontests tests)

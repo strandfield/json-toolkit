@@ -1,14 +1,17 @@
+// Copyright (C) 2019 Vincent Chambrin
+// This file is part of the json-toolkit library
+// For conditions of distribution and use, see copyright notice in LICENSE
 
-#ifndef LIBJSON_JSON_H
-#define LIBJSON_JSON_H
+#ifndef JSONTOOLKIT_JSON_H
+#define JSONTOOLKIT_JSON_H
 
 #include "json-global-defs.h"
 
-#if defined(LIBJSON_HAS_CONFIG)
+#if defined(JSONTOOLKIT_HAS_CONFIG)
 #  include "json-config.h"
 #else
 #  include "json-default-config.h"
-#endif // defined(LIBJSON_HAS_CONFIG)
+#endif // defined(JSONTOOLKIT_HAS_CONFIG)
 
 #include <memory>
 
@@ -530,4 +533,4 @@ inline const config::map_type<config::string_type, Json>& Object::data() const
 
 } // namespace json
 
-#endif // !LIBJSON_JSON_H
+#endif // !JSONTOOLKIT_JSON_H

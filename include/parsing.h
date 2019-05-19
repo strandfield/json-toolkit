@@ -1,6 +1,9 @@
+// Copyright (C) 2019 Vincent Chambrin
+// This file is part of the json-toolkit library
+// For conditions of distribution and use, see copyright notice in LICENSE
 
-#ifndef LIBJSON_PARSING_H
-#define LIBJSON_PARSING_H
+#ifndef JSONTOOLKIT_PARSING_H
+#define JSONTOOLKIT_PARSING_H
 
 #include "json.h"
 
@@ -751,4 +754,4 @@ inline json::Json parse(const config::string_type& str)
 
 #endif // defined(JSON_HAS_DEFAULT_PARSER_BACKEND))
 
-#endif // !LIBJSON_PARSING_H
+#endif // !JSONTOOLKIT_PARSING_H

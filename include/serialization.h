@@ -1,16 +1,19 @@
+// Copyright (C) 2019 Vincent Chambrin
+// This file is part of the json-toolkit library
+// For conditions of distribution and use, see copyright notice in LICENSE
 
-#ifndef LIBJSON_SERIALIZATION_H
-#define LIBJSON_SERIALIZATION_H
+#ifndef JSONTOOLKIT_SERIALIZATION_H
+#define JSONTOOLKIT_SERIALIZATION_H
 
 #include "json.h"
 
 #include <unordered_map>
 #include <stdexcept>
 
-#if __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+#if __cplusplus >= 201703L || defined(JSONTOOLKIT_CXX17)
 #include <optional>
 #include <variant>
-#endif // __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+#endif // __cplusplus >= 201703L || defined(JSONTOOLKIT_CXX17)
 
 namespace json
 {
@@ -141,7 +144,7 @@ struct encoder<config::array_type<T>>
 
 } // namespace serialization
 
-#if __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+#if __cplusplus >= 201703L || defined(JSONTOOLKIT_CXX17)
 
 namespace serialization
 {
@@ -195,9 +198,9 @@ struct encoder<std::variant<Args...>>
 
 } // namespace serialization
 
-#endif // __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+#endif // __cplusplus >= 201703L || defined(JSONTOOLKIT_CXX17)
 
-#if __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+#if __cplusplus >= 201703L || defined(JSONTOOLKIT_CXX17)
 
 namespace serialization
 {
@@ -228,7 +231,7 @@ struct encoder<std::optional<T>>
 
 } // namespace serialization
 
-#endif // __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+#endif // __cplusplus >= 201703L || defined(JSONTOOLKIT_CXX17)
 
 class Codec;
 
@@ -466,4 +469,4 @@ inline void ObjectCodec::addField(const std::string& name, M(T::*getter)() const
 
 } // namespace json
 
-#endif // !LIBJSON_SERIALIZATION_H
+#endif // !JSONTOOLKIT_SERIALIZATION_H

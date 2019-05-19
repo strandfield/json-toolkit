@@ -1,3 +1,6 @@
+// Copyright (C) 2019 Vincent Chambrin
+// This file is part of the json-toolkit library
+// For conditions of distribution and use, see copyright notice in LICENSE
 
 #include <gtest/gtest.h>
 
@@ -254,7 +257,7 @@ TEST(jsontest, codecSerialization)
   }
 }
 
-#if __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+#if __cplusplus >= 201703L || defined(JSONTOOLKIT_CXX17)
 
 TEST(jsontest, variantSerialization)
 {
@@ -295,9 +298,9 @@ TEST(jsontest, variantSerialization)
   }
 }
 
-#endif // __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+#endif // __cplusplus >= 201703L || defined(JSONTOOLKIT_CXX17)
 
-#if __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+#if __cplusplus >= 201703L || defined(JSONTOOLKIT_CXX17)
 
 TEST(jsontest, optionalSerialization)
 {
@@ -334,7 +337,7 @@ TEST(jsontest, optionalSerialization)
   }
 }
 
-#endif // __cplusplus >= 201703L || defined(LIBJSON_CPP17)
+#endif // __cplusplus >= 201703L || defined(JSONTOOLKIT_CXX17)
 
 TEST(jsontest, stringify)
 {

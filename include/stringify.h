@@ -1,6 +1,9 @@
+// Copyright (C) 2019 Vincent Chambrin
+// This file is part of the json-toolkit library
+// For conditions of distribution and use, see copyright notice in LICENSE
 
-#ifndef LIBJSON_STRINGIFY_H
-#define LIBJSON_STRINGIFY_H
+#ifndef JSONTOOLKIT_STRINGIFY_H
+#define JSONTOOLKIT_STRINGIFY_H
 
 #include "json.h"
 
@@ -275,4 +278,4 @@ inline config::string_type stringify(const json::Json& data, StringifyOptions op
 
 #endif // defined(JSON_HAS_DEFAULT_WRITER_BACKEND)
 
-#endif // !LIBJSON_STRINGIFY_H
+#endif // !JSONTOOLKIT_STRINGIFY_H
