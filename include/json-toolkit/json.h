@@ -347,7 +347,7 @@ inline Json Json::operator[](const config::string_type& key) const
   auto it = impl->value.find(key);
   if (it != impl->value.end())
     return it->second;
-  return Json();
+  return nullptr;
 }
 
 inline Object Json::toObject() const
