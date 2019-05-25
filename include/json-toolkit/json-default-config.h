@@ -7,7 +7,7 @@
 #include <sstream>
 #include <vector>
 
-#include "json-global-defs.h"
+#include "json-toolkit/json-global-defs.h"
 
 #define JSON_HAS_DEFAULT_PARSER_BACKEND
 #define JSON_HAS_DEFAULT_WRITER_BACKEND

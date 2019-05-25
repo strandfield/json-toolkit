@@ -5,7 +5,7 @@
 #ifndef JSONTOOLKIT_PARSING_H
 #define JSONTOOLKIT_PARSING_H
 
-#include "json.h"
+#include "json-toolkit/json.h"
 
 namespace json
 {

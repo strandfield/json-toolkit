@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-#include "parsing.h"
+#include "json-toolkit/parsing.h"
 
 #if defined(JSON_HAS_DEFAULT_PARSER_BACKEND)
 

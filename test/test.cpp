@@ -4,10 +4,10 @@
 
 #include <gtest/gtest.h>
 
-#include "json.h"
-#include "parsing.h"
-#include "serialization.h"
-#include "stringify.h"
+#include "json-toolkit/json.h"
+#include "json-toolkit/parsing.h"
+#include "json-toolkit/serialization.h"
+#include "json-toolkit/stringify.h"
 
 #if __cplusplus >= 201703L
 #include <variant>

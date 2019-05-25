@@ -9,7 +9,7 @@
 ### Json objects
 
 ```cpp
-#include "json.h"
+#include "json-toolkit/json.h"
 ```
 
 This header provides 3 classes to create and manipulate Json objects:
@@ -60,7 +60,7 @@ Json objects can be compared for equality using `==` and `!=`.
 ### Serialization of C++ objects
 
 ```cpp
-#include "serialization.h"
+#include "json-toolkit/serialization.h"
 ```
 
 This header provides utilities to convert C++ objects to and fro `Json`.
@@ -102,7 +102,7 @@ serializer.addCodec(codec);
 ### Parsing
 
 ```cpp
-#include "parsing.h"
+#include "json-toolkit/parsing.h"
 ```
 
 This header provides parsing utilities. The high-level `parse` will create a `Json` value from a string. 
@@ -116,7 +116,7 @@ For more advanced use, a template class `ParserMachine` provides a state-machine
 ### Stringify
 
 ```cpp
-#include "stringify.h"
+#include "json-toolkit/stringify.h"
 ```
 
 This header provides both a high-level function `stringify` and a template `GenericWriter` to write Json strings.

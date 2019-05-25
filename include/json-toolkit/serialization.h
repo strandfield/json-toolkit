@@ -5,7 +5,7 @@
 #ifndef JSONTOOLKIT_SERIALIZATION_H
 #define JSONTOOLKIT_SERIALIZATION_H
 
-#include "json.h"
+#include "json-toolkit/json.h"
 
 #include <unordered_map>
 #include <stdexcept>

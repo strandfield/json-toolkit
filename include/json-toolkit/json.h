@@ -5,12 +5,12 @@
 #ifndef JSONTOOLKIT_JSON_H
 #define JSONTOOLKIT_JSON_H
 
-#include "json-global-defs.h"
+#include "json-toolkit/json-global-defs.h"
 
 #if defined(JSONTOOLKIT_HAS_CONFIG)
-#  include "json-config.h"
+#  include "json-toolkit/json-config.h"
 #else
-#  include "json-default-config.h"
+#  include "json-toolkit/json-default-config.h"
 #endif // defined(JSONTOOLKIT_HAS_CONFIG)
 
 #include <memory>

@@ -5,7 +5,7 @@
 #ifndef JSONTOOLKIT_STRINGIFY_H
 #define JSONTOOLKIT_STRINGIFY_H
 
-#include "json.h"
+#include "json-toolkit/json.h"
 
 namespace json
 {
