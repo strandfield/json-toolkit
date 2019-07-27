@@ -2,10 +2,11 @@
 // This file is part of the json-toolkit library
 // For conditions of distribution and use, see copyright notice in LICENSE
 
-namespace json
-{
+#include "json-global-defs.h"
 
-namespace config
+#include <sstream>
+
+namespace json
 {
 
 struct DefaultWriterBackend
@@ -71,19 +72,17 @@ struct DefaultWriterBackend
     return *this;
   }
 
-  DefaultWriterBackend& operator<<(config::number_type value)
+  DefaultWriterBackend& operator<<(double value)
   {
     result_ << value;
     return *this;
   }
 
-  DefaultWriterBackend& operator<<(const config::string_type & str)
+  DefaultWriterBackend& operator<<(const std::string& str)
   {
     result_ << str;
     return *this;
   }
 };
-
-} // namespace config
 
 } // namespace json

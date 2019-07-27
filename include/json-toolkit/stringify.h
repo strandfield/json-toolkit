@@ -10,14 +10,11 @@
 namespace json
 {
 
-// if has default impl
 enum StringifyOptions {
   None = 0,
 };
 
-#if defined(JSON_HAS_DEFAULT_WRITER_BACKEND)
-config::string_type stringify(const json::Json& data, StringifyOptions options = None);
-#endif // defined(JSON_HAS_DEFAULT_WRITER_BACKEND)
+std::string stringify(const json::Json& data, StringifyOptions options = None);
 
 enum class WriterState
 {
@@ -66,14 +63,14 @@ public:
     update();
   }
 
-  void value(config::number_type val)
+  void value(double val)
   {
     wroteArraySeparator();
     backend() << val;
     update();
   }
 
-  void value(const config::string_type& str)
+  void value(const std::string& str)
   {
     wroteArraySeparator();
     backend() << CharCategory::DoubleQuote << str << CharCategory::DoubleQuote;
@@ -89,7 +86,7 @@ public:
     enter(WriterState::StartedObject);
   }
 
-  void key(const config::string_type& str)
+  void key(const std::string& str)
   {
     if (state() == WriterState::WroteObjectValue)
     {
@@ -206,8 +203,6 @@ private:
 
 } // namespace json
 
-#if defined(JSON_HAS_DEFAULT_WRITER_BACKEND)
-
 #include "json-default-writer-backend.h"
 
 namespace json
@@ -216,7 +211,7 @@ namespace json
 namespace details
 {
 
-inline void write(GenericWriter<config::DefaultWriterBackend>& writer, const json::Json& data)
+inline void write(GenericWriter<DefaultWriterBackend>& writer, const json::Json& data)
 {
   if (data.isArray())
   {
@@ -267,15 +262,13 @@ inline void write(GenericWriter<config::DefaultWriterBackend>& writer, const jso
 
 } // namespace details
 
-inline config::string_type stringify(const json::Json& data, StringifyOptions options)
+inline std::string stringify(const json::Json& data, StringifyOptions options)
 {
-  GenericWriter<config::DefaultWriterBackend> writer;
+  GenericWriter<DefaultWriterBackend> writer;
   details::write(writer, data);
   return writer.backend().result();
 }
 
 } // namespace json
-
-#endif // defined(JSON_HAS_DEFAULT_WRITER_BACKEND)
 
 #endif // !JSONTOOLKIT_STRINGIFY_H

@@ -5,9 +5,6 @@
 namespace json
 {
 
-namespace config
-{
-
 struct DefaultTokenizerBackend
 {
   std::vector<json::Token> token_buffer;
@@ -56,7 +53,7 @@ struct DefaultTokenizerBackend
     return str == "null";
   }
 
-  static bool is_bool(const string_type & str, bool* value)
+  static bool is_bool(const string_type& str, bool* value)
   {
     if (str == "true")
     {
@@ -74,27 +71,27 @@ struct DefaultTokenizerBackend
 
   static char_type new_line() { return '\n'; }
 
-  static size_t size(const string_type & str)
+  static size_t size(const string_type& str)
   {
     return str.size();
   }
 
-  static char_type at(const string_type & str, size_t index)
+  static char_type at(const string_type& str, size_t index)
   {
     return str.at(index);
   }
 
-  static void clear(string_type & str)
+  static void clear(string_type& str)
   {
     str.clear();
   }
 
-  static void push_back(string_type & str, char_type c)
+  static void push_back(string_type& str, char_type c)
   {
     str.push_back(c);
   }
 
-  void produce(json::TokenType ttype, const string_type & str)
+  void produce(json::TokenType ttype, const string_type& str)
   {
     json::Token tok{ ttype, str };
     token_buffer.push_back(tok);
@@ -118,7 +115,7 @@ struct DefaultParserBackend
     return std::string(str.begin() + 1, str.end() - 1);
   }
 
-  void writeField(const json::Json & value)
+  void writeField(const json::Json& value)
   {
     assert(stack.back().isString());
 
@@ -130,7 +127,7 @@ struct DefaultParserBackend
     stack.back()[key] = value;
   }
 
-  void writeValue(const json::Json & value)
+  void writeValue(const json::Json& value)
   {
     if (stack.back().isString())
     {
@@ -163,7 +160,7 @@ struct DefaultParserBackend
     writeValue(json::Json(val));
   }
 
-  void value(const std::string & str)
+  void value(const std::string& str)
   {
     writeValue(json::Json(str));
   }
@@ -173,7 +170,7 @@ struct DefaultParserBackend
     stack.push_back(json::Object());
   }
 
-  void key(const std::string & str)
+  void key(const std::string& str)
   {
     assert(stack.back().isObject());
     stack.push_back(json::Json(str));
@@ -236,7 +233,5 @@ struct DefaultParserBackend
 
   std::vector<json::Json> stack;
 };
-
-} // namespace config
 
 } // namespace json

@@ -53,36 +53,36 @@ struct decoder<bool>
 };
 
 template<>
-struct decoder<config::integer_type>
+struct decoder<int>
 {
-  static void decode(Serializer& s, const Json& data, config::integer_type& value)
+  static void decode(Serializer& s, const Json& data, int& value)
   {
     value = data.toInt();
   }
 };
 
 template<>
-struct decoder<config::string_type>
+struct decoder<std::string>
 {
-  static void decode(Serializer& s, const Json& data, config::string_type& value)
+  static void decode(Serializer& s, const Json& data, std::string& value)
   {
     value = data.toString();
   }
 };
 
 template<>
-struct decoder<config::number_type>
+struct decoder<double>
 {
-  static void decode(Serializer& s, const Json& data, config::number_type& value)
+  static void decode(Serializer& s, const Json& data, double& value)
   {
     value = data.toNumber();
   }
 };
 
 template<typename T>
-struct decoder<config::array_type<T>>
+struct decoder<std::vector<T>>
 {
-  static void decode(Serializer& s, const Json& data, config::array_type<T>& value)
+  static void decode(Serializer& s, const Json& data, std::vector<T>& value)
   {
     if (!data.isArray())
       throw std::runtime_error{ "Serializer::decode() : decode error - not an array" };
@@ -102,36 +102,36 @@ struct encoder<bool>
 };
 
 template<>
-struct encoder<config::integer_type>
+struct encoder<int>
 {
-  static Json encode(Serializer& s, const config::integer_type& value)
+  static Json encode(Serializer& s, const int& value)
   {
     return Json(value);
   }
 };
 
 template<>
-struct encoder<config::string_type>
+struct encoder<std::string>
 {
-  static Json encode(Serializer& s, const config::string_type& value)
+  static Json encode(Serializer& s, const std::string& value)
   {
     return Json(value);
   }
 };
 
 template<>
-struct encoder<config::number_type>
+struct encoder<double>
 {
-  static Json encode(Serializer& s, const config::number_type& value)
+  static Json encode(Serializer& s, const double& value)
   {
     return Json(value);
   }
 };
 
 template<typename T>
-struct encoder<config::array_type<T>>
+struct encoder<std::vector<T>>
 {
-  static Json encode(Serializer& s, const config::array_type<T>& values)
+  static Json encode(Serializer& s, const std::vector<T>& values)
   {
     Json result = Array();
 
@@ -188,7 +188,7 @@ struct encoder<std::variant<Args...>>
   static Json encode(Serializer& s, const std::variant<Args...>& values)
   {
     Json result = {};
-    result["index"] = (config::integer_type) values.index();
+    result["index"] = (int) values.index();
     result["value"] = std::visit([&s](const auto & val) -> Json {
       return s.encode(val);
     }, values);

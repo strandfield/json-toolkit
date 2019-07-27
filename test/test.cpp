@@ -163,7 +163,7 @@ TEST(jsontest, templateSerialization)
   }
 
   {
-    config::array_type<Point> pts;
+    std::vector<Point> pts;
     pts.push_back(Point{ 1, 2 });
     pts.push_back(Point{ 3, 4 });
 

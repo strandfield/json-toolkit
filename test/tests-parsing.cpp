@@ -6,13 +6,11 @@
 
 #include "json-toolkit/parsing.h"
 
-#if defined(JSON_HAS_DEFAULT_PARSER_BACKEND)
-
 TEST(parsing, tokenizer)
 {
   using namespace json;
   
-  Tokenizer<config::DefaultTokenizerBackend> tokenizer;
+  Tokenizer<DefaultTokenizerBackend> tokenizer;
   auto& buffer = tokenizer.backend().token_buffer;
 
   tokenizer.write("123 hello 'str' \"haha\" ");
@@ -58,7 +56,7 @@ TEST(parsing, tokenizer_exceptions)
 {
   using namespace json;
 
-  Tokenizer<config::DefaultTokenizerBackend> tokenizer;
+  Tokenizer<DefaultTokenizerBackend> tokenizer;
   auto& buffer = tokenizer.backend().token_buffer;
 
   tokenizer.write("1.24");
@@ -88,7 +86,7 @@ TEST(parsing, parser_machine_tokens)
 {
   using namespace json;
 
-  ParserMachine<config::DefaultParserBackend> parser;
+  ParserMachine<DefaultParserBackend> parser;
 
   std::vector<Token> tokens{
     Token(TokenType::LBrace),
@@ -134,11 +132,11 @@ TEST(parsing, parser_machine_string_1)
     "    }                                     "
     "  }                                       ";
 
-  Tokenizer<config::DefaultTokenizerBackend> tokenizer;
+  Tokenizer<DefaultTokenizerBackend> tokenizer;
   auto& buffer = tokenizer.backend().token_buffer;
   tokenizer.write(input);
 
-  ParserMachine<config::DefaultParserBackend> parser;
+  ParserMachine<DefaultParserBackend> parser;
 
   for (const auto& tok : buffer)
     parser.write(tok);
@@ -164,11 +162,11 @@ TEST(parsing, parser_machine_string_2)
 
   std::string input = " [1, 2, [true, false], {}, 3.14] ";
 
-  Tokenizer<config::DefaultTokenizerBackend> tokenizer;
+  Tokenizer<DefaultTokenizerBackend> tokenizer;
   auto& buffer = tokenizer.backend().token_buffer;
   tokenizer.write(input);
 
-  ParserMachine<config::DefaultParserBackend> parser;
+  ParserMachine<DefaultParserBackend> parser;
 
   for (const auto& tok : buffer)
     parser.write(tok);
@@ -192,7 +190,7 @@ TEST(parsing, parser_machine_exceptions)
 {
   using namespace json;
 
-  ParserMachine<config::DefaultParserBackend> parser;
+  ParserMachine<DefaultParserBackend> parser;
 
   // [}]
   parser.write(Token(TokenType::LBracket));
@@ -212,5 +210,3 @@ TEST(parsing, parser_machine_exceptions)
   ASSERT_EQ(parser.state(), ParserState::Idle);
   parser.backend().stack.clear();
 }
-
-#endif // defined(JSON_HAS_DEFAULT_PARSER_BACKEND)

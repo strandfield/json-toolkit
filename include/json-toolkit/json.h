@@ -7,13 +7,10 @@
 
 #include "json-toolkit/json-global-defs.h"
 
-#if defined(JSONTOOLKIT_HAS_CONFIG)
-#  include "json-toolkit/json-config.h"
-#else
-#  include "json-toolkit/json-default-config.h"
-#endif // defined(JSONTOOLKIT_HAS_CONFIG)
-
+#include <map>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace json
 {
@@ -58,9 +55,9 @@ public:
 
   Json(nullptr_t);
   Json(bool bval);
-  Json(config::integer_type ival);
-  Json(config::number_type nval);
-  Json(const config::string_type& str);
+  Json(int ival);
+  Json(double nval);
+  Json(const std::string& str);
   Json(const char* str);
 
   inline Json(const std::shared_ptr<details::Node>& impl) : d(impl) { }
@@ -77,9 +74,9 @@ public:
 
   /* Value interface */
   bool toBool() const;
-  config::integer_type toInt() const;
-  config::number_type toNumber() const;
-  const config::string_type& toString() const;
+  int toInt() const;
+  double toNumber() const;
+  const std::string& toString() const;
 
   /* Array interface */
   int length() const;
@@ -89,8 +86,8 @@ public:
   Array toArray() const;
 
   /* Object interface */
-  Json& operator[](const config::string_type& key);
-  Json operator[](const config::string_type& key) const;
+  Json& operator[](const std::string& key);
+  Json operator[](const std::string& key) const;
   Object toObject() const;
 
   inline const std::shared_ptr<details::Node>& impl() const { return d; }
@@ -99,9 +96,9 @@ public:
 
   Json& operator=(nullptr_t);
   Json& operator=(bool val);
-  Json& operator=(config::integer_type val);
-  Json& operator=(config::number_type val);
-  Json& operator=(const config::string_type& str);
+  Json& operator=(int val);
+  Json& operator=(double val);
+  Json& operator=(const std::string& str);
   Json& operator=(const char* str);
 
   inline bool operator==(nullptr_t) const { return type() == JsonType::Null; }
@@ -162,10 +159,10 @@ public:
 class IntegerNode : public Node
 {
 public:
-  config::integer_type value;
+  int value;
 
 public:
-  IntegerNode(config::integer_type val) : value(val) { }
+  IntegerNode(int val) : value(val) { }
   ~IntegerNode() = default;
 
   JsonType type() const override { return JsonType::Integer; }
@@ -174,10 +171,10 @@ public:
 class NumberNode : public Node
 {
 public:
-  config::number_type value;
+  double value;
 
 public:
-  NumberNode(config::number_type val) : value(val) { }
+  NumberNode(double val) : value(val) { }
   ~NumberNode() = default;
 
   JsonType type() const override { return JsonType::Number; }
@@ -186,10 +183,10 @@ public:
 class StringNode : public Node
 {
 public:
-  config::string_type value;
+  std::string value;
 
 public:
-  StringNode(config::string_type val) : value(val) { }
+  StringNode(std::string val) : value(val) { }
   ~StringNode() = default;
 
   JsonType type() const override { return JsonType::String; }
@@ -198,11 +195,11 @@ public:
 class ArrayNode : public Node
 {
 public:
-  config::array_type<Json> value;
+  std::vector<Json> value;
 
 public:
   ArrayNode() = default;
-  ArrayNode(config::array_type<Json>&& val) : value(std::move(val)) { }
+  ArrayNode(std::vector<Json>&& val) : value(std::move(val)) { }
   ~ArrayNode() = default;
 
   JsonType type() const override { return JsonType::Array; }
@@ -211,11 +208,11 @@ public:
 class ObjectNode : public Node
 {
 public:
-  config::map_type<config::string_type, Json> value;
+  std::map<std::string, Json> value;
 
 public:
   ObjectNode() = default;
-  ObjectNode(config::map_type<config::string_type, Json>&& val) : value(std::move(val)) { }
+  ObjectNode(std::map<std::string, Json>&& val) : value(std::move(val)) { }
   ~ObjectNode() = default;
 
   JsonType type() const override { return JsonType::Object; }
@@ -232,14 +229,14 @@ public:
 
   Array(const std::shared_ptr<details::Node>& impl);
 
-  config::array_type<Json>& data();
-  const config::array_type<Json>& data() const;
+  std::vector<Json>& data();
+  const std::vector<Json>& data() const;
 
-  inline config::array_type<Json>& operator*() { return data(); }
-  inline const config::array_type<Json>& operator*() const { return data(); }
+  inline std::vector<Json>& operator*() { return data(); }
+  inline const std::vector<Json>& operator*() const { return data(); }
 
-  inline config::array_type<Json>* operator->() { return &data(); }
-  inline const config::array_type<Json>* operator->() const { return &data(); }
+  inline std::vector<Json>* operator->() { return &data(); }
+  inline const std::vector<Json>* operator->() const { return &data(); }
 
   Array& operator=(const Array&) = default;
 };
@@ -253,14 +250,14 @@ public:
 
   Object(const std::shared_ptr<details::Node>& obj);
 
-  config::map_type<config::string_type, Json>& data();
-  const config::map_type<config::string_type, Json>& data() const;
+  std::map<std::string, Json>& data();
+  const std::map<std::string, Json>& data() const;
 
-  inline config::map_type<config::string_type, Json>& operator*() { return data(); }
-  inline const config::map_type<config::string_type, Json>& operator*() const { return data(); }
+  inline std::map<std::string, Json>& operator*() { return data(); }
+  inline const std::map<std::string, Json>& operator*() const { return data(); }
 
-  inline config::map_type<config::string_type, Json>* operator->() { return &data(); }
-  inline const config::map_type<config::string_type, Json>* operator->() const { return &data(); }
+  inline std::map<std::string, Json>* operator->() { return &data(); }
+  inline const std::map<std::string, Json>* operator->() const { return &data(); }
 
   Object& operator=(const Object&) = default;
 };
@@ -276,9 +273,9 @@ namespace json
 inline Json::Json() : d(std::make_shared<details::ObjectNode>()) { }
 inline Json::Json(nullptr_t) : d(details::NullNode::get()) { }
 inline Json::Json(bool bval) : d(std::make_shared<details::BooleanNode>(bval)) { }
-inline Json::Json(config::integer_type ival) : d(std::make_shared<details::IntegerNode>(ival)) { }
-inline Json::Json(config::number_type nval) : d(std::make_shared<details::NumberNode>(nval)) { }
-inline Json::Json(const config::string_type& str) : d(std::make_shared<details::StringNode>(str)) { }
+inline Json::Json(int ival) : d(std::make_shared<details::IntegerNode>(ival)) { }
+inline Json::Json(double nval) : d(std::make_shared<details::NumberNode>(nval)) { }
+inline Json::Json(const std::string& str) : d(std::make_shared<details::StringNode>(str)) { }
 inline Json::Json(const char* str) : d(std::make_shared<details::StringNode>(str)) { }
 
 inline bool Json::toBool() const
@@ -287,19 +284,19 @@ inline bool Json::toBool() const
   return static_cast<const details::BooleanNode*>(d.get())->value;
 }
 
-inline config::integer_type Json::toInt() const
+inline int Json::toInt() const
 {
   assert(isInteger());
   return static_cast<const details::IntegerNode*>(d.get())->value;
 }
 
-inline config::number_type Json::toNumber() const
+inline double Json::toNumber() const
 {
   assert(isNumber());
   return static_cast<const details::NumberNode*>(d.get())->value;
 }
 
-inline const config::string_type& Json::toString() const
+inline const std::string& Json::toString() const
 {
   assert(isString());
   return static_cast<const details::StringNode*>(d.get())->value;
@@ -334,13 +331,13 @@ inline Array Json::toArray() const
   return Array(d);
 }
 
-inline Json& Json::operator[](const config::string_type& key)
+inline Json& Json::operator[](const std::string& key)
 {
   assert(isObject());
   return static_cast<details::ObjectNode*>(d.get())->value[key];
 }
 
-inline Json Json::operator[](const config::string_type& key) const
+inline Json Json::operator[](const std::string& key) const
 {
   assert(isObject());
   auto* impl = static_cast<details::ObjectNode*>(d.get());
@@ -367,19 +364,19 @@ inline Json& Json::operator=(bool val)
   return *this;
 }
 
-inline Json& Json::operator=(config::integer_type val)
+inline Json& Json::operator=(int val)
 {
   d = std::make_shared<details::IntegerNode>(val);
   return *this;
 }
 
-inline Json& Json::operator=(config::number_type val)
+inline Json& Json::operator=(double val)
 {
   d = std::make_shared<details::NumberNode>(val);
   return *this;
 }
 
-inline Json& Json::operator=(const config::string_type& str)
+inline Json& Json::operator=(const std::string& str)
 {
   d = std::make_shared<details::StringNode>(str);
   return *this;
@@ -428,7 +425,7 @@ inline int object_compare(const Object& lhs, const Object& rhs)
 
   for (; lhs_it != lhs.data().end(); ++lhs_it, ++rhs_it)
   {
-    int c = config::string_compare(lhs_it->first, rhs_it->first);
+    int c = lhs_it->first.compare(rhs_it->first);
 
     if (c != 0)
       return c;
@@ -461,7 +458,7 @@ inline int compare(const Json& lhs, const Json& rhs)
   case JsonType::Number:
     return number_compare(static_cast<const details::NumberNode*>(lhs.impl().get()), static_cast<const details::NumberNode*>(rhs.impl().get()));
   case JsonType::String:
-    return config::string_compare(lhs.toString(), rhs.toString());
+    return lhs.toString().compare(rhs.toString());
   case JsonType::Array:
     return array_compare(lhs.toArray(), rhs.toArray());
   case JsonType::Object:
@@ -495,13 +492,13 @@ inline Array::Array(const std::shared_ptr<details::Node>& impl)
 
 }
 
-inline config::array_type<Json>& Array::data()
+inline std::vector<Json>& Array::data()
 {
   assert(isArray());
   return static_cast<details::ArrayNode*>(d.get())->value;
 }
 
-inline const config::array_type<Json>& Array::data() const
+inline const std::vector<Json>& Array::data() const
 {
   assert(isArray());
   return static_cast<const details::ArrayNode*>(d.get())->value;
@@ -519,13 +516,13 @@ inline Object::Object(const std::shared_ptr<details::Node>& obj)
 
 }
 
-inline config::map_type<config::string_type, Json>& Object::data()
+inline std::map<std::string, Json>& Object::data()
 {
   assert(isObject());
   return static_cast<details::ObjectNode*>(d.get())->value;
 }
 
-inline const config::map_type<config::string_type, Json>& Object::data() const
+inline const std::map<std::string, Json>& Object::data() const
 {
   assert(isObject());
   return static_cast<const details::ObjectNode*>(d.get())->value;

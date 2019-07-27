@@ -10,9 +10,7 @@
 namespace json
 {
 
-#if defined(JSON_HAS_DEFAULT_PARSER_BACKEND)
-json::Json parse(const config::string_type& str);
-#endif // defined(JSON_HAS_DEFAULT_PARSER_BACKEND)
+json::Json parse(const std::string& str);
 
 enum class TokenType {
   Invalid = 0,
@@ -35,14 +33,14 @@ class Token
 {
 public:
   TokenType type;
-  config::string_type text;
+  std::string text;
 
 public:
   Token() : type(TokenType::Invalid) { }
   Token(const Token&) = default;
   ~Token() = default;
 
-  Token(TokenType ttype, const config::string_type& str = config::string_type())
+  Token(TokenType ttype, const std::string& str = std::string())
     : type(ttype), text(str) { }
 
   Token& operator=(const Token&) = default;
@@ -461,18 +459,18 @@ namespace json
 /*
 struct ParserBackend
 {
-  static config::number_type parse_integer(const config::string_type& str);
-  static config::number_type parse_number(const config::string_type& str);
-  static config::string_type remove_quotes(const config::string_type& str);
+  static int parse_integer(const std::string& str);
+  static double parse_number(const std::string& str);
+  static std::string remove_quotes(const std::string& str);
 
   void value(nullptr_t);
   void value(bool val);
   void value(int val);
-  void value(config::number_type val);
-  void value(const config::string_type& str);
+  void value(double val);
+  void value(const std::string& str);
 
   void start_object();
-  void key(const config::string_type& str);
+  void key(const std::string& str);
   void end_object();
 
   void start_array();
@@ -492,7 +490,6 @@ enum class ParserState {
 };
 
 template<typename Backend>
-//using Backend = ParserBackend;
 class ParserMachine
 {
 public:
@@ -726,21 +723,19 @@ private:
 
 } // namespace json
 
-#if defined(JSON_HAS_DEFAULT_PARSER_BACKEND)
-
 #include "json-default-parser-backend.h"
 
 namespace json
 {
 
-inline json::Json parse(const config::string_type& str)
+inline json::Json parse(const std::string& str)
 {
-  Tokenizer<config::DefaultTokenizerBackend> tokenizer;
+  Tokenizer<DefaultTokenizerBackend> tokenizer;
   auto& buffer = tokenizer.backend().token_buffer;
   tokenizer.write(str);
   tokenizer.done();
 
-  ParserMachine<config::DefaultParserBackend> parser;
+  ParserMachine<DefaultParserBackend> parser;
   
   for (const auto& tok : buffer)
   {
@@ -751,7 +746,5 @@ inline json::Json parse(const config::string_type& str)
 }
 
 } // namespace json
-
-#endif // defined(JSON_HAS_DEFAULT_PARSER_BACKEND))
 
 #endif // !JSONTOOLKIT_PARSING_H
