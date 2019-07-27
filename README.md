@@ -4,6 +4,8 @@
 
 `json-toolkit` is header-only library providing several Json utilities, it is released under the MIT license.
 
+[![Build Status](https://api.travis-ci.org/bandicode/json-toolkit.svg?branch=master)](https://travis-ci.org/bandicode/json-toolkit)
+
 ## Documentation
 
 ### Json objects
