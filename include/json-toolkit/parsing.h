@@ -463,7 +463,7 @@ struct ParserBackend
   static double parse_number(const std::string& str);
   static std::string remove_quotes(const std::string& str);
 
-  void value(nullptr_t);
+  void value(std::nullptr_t);
   void value(bool val);
   void value(int val);
   void value(double val);

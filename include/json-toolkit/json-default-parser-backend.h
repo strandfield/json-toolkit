@@ -140,7 +140,7 @@ struct DefaultParserBackend
     }
   }
 
-  void value(nullptr_t)
+  void value(std::nullptr_t)
   {
     writeValue(json::Json(nullptr));
   }

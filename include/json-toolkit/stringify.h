@@ -42,7 +42,7 @@ public:
 
   inline Backend& backend() { return m_backend; }
 
-  void value(nullptr_t)
+  void value(std::nullptr_t)
   {
     wroteArraySeparator();
     backend() << nullptr;

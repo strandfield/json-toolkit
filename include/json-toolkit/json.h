@@ -53,7 +53,7 @@ public:
   Json(const Json&) = default;
   ~Json() = default;
 
-  Json(nullptr_t);
+  Json(std::nullptr_t);
   Json(bool bval);
   Json(int ival);
   Json(double nval);
@@ -94,14 +94,14 @@ public:
 
   Json& operator=(const Json&) = default;
 
-  Json& operator=(nullptr_t);
+  Json& operator=(std::nullptr_t);
   Json& operator=(bool val);
   Json& operator=(int val);
   Json& operator=(double val);
   Json& operator=(const std::string& str);
   Json& operator=(const char* str);
 
-  inline bool operator==(nullptr_t) const { return type() == JsonType::Null; }
+  inline bool operator==(std::nullptr_t) const { return type() == JsonType::Null; }
 
 protected:
   std::shared_ptr<details::Node> d;
@@ -271,7 +271,7 @@ namespace json
 {
 
 inline Json::Json() : d(std::make_shared<details::ObjectNode>()) { }
-inline Json::Json(nullptr_t) : d(details::NullNode::get()) { }
+inline Json::Json(std::nullptr_t) : d(details::NullNode::get()) { }
 inline Json::Json(bool bval) : d(std::make_shared<details::BooleanNode>(bval)) { }
 inline Json::Json(int ival) : d(std::make_shared<details::IntegerNode>(ival)) { }
 inline Json::Json(double nval) : d(std::make_shared<details::NumberNode>(nval)) { }
@@ -352,7 +352,7 @@ inline Object Json::toObject() const
   return Object(d);
 }
 
-inline Json& Json::operator=(nullptr_t)
+inline Json& Json::operator=(std::nullptr_t)
 {
   d = details::NullNode::get();
   return *this;

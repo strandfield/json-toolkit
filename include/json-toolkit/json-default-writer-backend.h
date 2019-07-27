@@ -54,7 +54,7 @@ struct DefaultWriterBackend
     return *this;
   }
 
-  DefaultWriterBackend& operator<<(nullptr_t)
+  DefaultWriterBackend& operator<<(std::nullptr_t)
   {
     result_ << "null";
     return *this;
