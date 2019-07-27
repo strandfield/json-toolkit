@@ -43,6 +43,47 @@ struct encoder
   }
 };
 
+} // namespace serialization
+
+class Codec;
+
+class Serializer
+{
+public:
+  Serializer() = default;
+  Serializer(const Serializer&) = delete;
+  ~Serializer() = default;
+
+  template<typename T>
+  T decode(const Json& obj);
+
+  template<typename T>
+  Json encode(const T& value);
+
+  void addCodec(std::unique_ptr<Codec>&& codec);
+  inline void addCodec(Codec* c) { addCodec(std::unique_ptr<Codec>(c)); }
+
+  inline const std::unordered_map<hash_code_t, std::unique_ptr<Codec>>& codecs() const { return m_codecs; }
+
+private:
+  std::unordered_map<hash_code_t, std::unique_ptr<Codec>> m_codecs;
+};
+
+class Codec
+{
+public:
+  Codec() = default;
+  virtual ~Codec() = default;
+
+  virtual hash_code_t hash_code() const = 0;
+
+  virtual void decode(Serializer& serializer, const Json& data, void* value) = 0;
+  virtual Json encode(Serializer& serializer, void* value) = 0;
+};
+
+namespace serialization
+{
+
 template<>
 struct decoder<bool>
 {
@@ -188,10 +229,10 @@ struct encoder<std::variant<Args...>>
   static Json encode(Serializer& s, const std::variant<Args...>& values)
   {
     Json result = {};
-    result["index"] = (int) values.index();
-    result["value"] = std::visit([&s](const auto & val) -> Json {
+    result["index"] = (int)values.index();
+    result["value"] = std::visit([&s](const auto& val) -> Json {
       return s.encode(val);
-    }, values);
+      }, values);
     return result;
   }
 };
@@ -232,42 +273,6 @@ struct encoder<std::optional<T>>
 } // namespace serialization
 
 #endif // __cplusplus >= 201703L || defined(JSONTOOLKIT_CXX17)
-
-class Codec;
-
-class Serializer
-{
-public:
-  Serializer() = default;
-  Serializer(const Serializer&) = delete;
-  ~Serializer() = default;
-
-  template<typename T>
-  T decode(const Json& obj);
-
-  template<typename T>
-  Json encode(const T& value);
-
-  void addCodec(std::unique_ptr<Codec>&& codec);
-  inline void addCodec(Codec* c) { addCodec(std::unique_ptr<Codec>(c)); }
-
-  inline const std::unordered_map<hash_code_t, std::unique_ptr<Codec>>& codecs() const { return m_codecs; }
-
-private:
-  std::unordered_map<hash_code_t, std::unique_ptr<Codec>> m_codecs;
-};
-
-class Codec
-{
-public:
-  Codec() = default;
-  virtual ~Codec() = default;
-
-  virtual hash_code_t hash_code() const = 0;
-
-  virtual void decode(Serializer& serializer, const Json& data, void* value) = 0;
-  virtual Json encode(Serializer& serializer, void* value) = 0;
-};
 
 } // namespace json
 
