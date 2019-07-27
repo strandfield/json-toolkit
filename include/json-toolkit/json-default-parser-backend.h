@@ -39,7 +39,7 @@ struct DefaultTokenizerBackend
 
     if ('0' <= c && c <= '9')
       return CharCategory::Digit;
-    else if ('a' <= c && c <= 'z' || 'A' <= c && c <= 'Z')
+    else if (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z'))
       return CharCategory::Letter;
 
     if ('!' <= c && c <= '/')

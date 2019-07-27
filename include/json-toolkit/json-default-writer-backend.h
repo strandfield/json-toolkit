@@ -49,6 +49,8 @@ struct DefaultWriterBackend
     case CharCategory::DoubleQuote:
       result_ << "\"";
       break;
+    default:
+      break;
     }
 
     return *this;
