@@ -13,4 +13,8 @@ target_include_directories(tests PUBLIC "${GTEST_DIR}/include")
 target_include_directories(tests PRIVATE "${GTEST_DIR}")
 target_include_directories(tests PUBLIC "../include")
 
+if (NOT DEFINED WIN32)
+  target_link_libraries(tests pthread)
+endif()
+
 add_test(libjsontests tests)
