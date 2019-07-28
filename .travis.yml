@@ -24,7 +24,7 @@ matrix:
       - make
       - cd test
       - ./tests --gtest_output="xml:gtest-report.xml"
-- os: linux
+  - os: linux
     env:
       - TEST="Codecov"
     addons:
