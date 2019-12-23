@@ -566,8 +566,11 @@ protected:
     switch (tok.type)
     {
     case TokenType::Identifier:
-    case TokenType::StringLiteral:
       m_backend.key(tok.text);
+      update(ParserState::ReadFieldName);
+      return;
+    case TokenType::StringLiteral:
+      m_backend.key(m_backend.remove_quotes(tok.text));
       update(ParserState::ReadFieldName);
       return;
     case TokenType::RBrace:
