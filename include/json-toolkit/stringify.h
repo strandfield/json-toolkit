@@ -44,42 +44,42 @@ public:
 
   void value(std::nullptr_t)
   {
-    wroteArraySeparator();
+    writeArraySeparator();
     backend() << nullptr;
     update();
   }
 
   void value(bool val)
   {
-    wroteArraySeparator();
+    writeArraySeparator();
     backend() << val;
     update();
   }
 
   void value(int val)
   {
-    wroteArraySeparator();
+    writeArraySeparator();
     backend() << val;
     update();
   }
 
   void value(double val)
   {
-    wroteArraySeparator();
+    writeArraySeparator();
     backend() << val;
     update();
   }
 
   void value(const std::string& str)
   {
-    wroteArraySeparator();
+    writeArraySeparator();
     backend() << CharCategory::DoubleQuote << str << CharCategory::DoubleQuote;
     update();
   }
 
   void start_object()
   {
-    wroteArraySeparator();
+    writeArraySeparator();
 
     backend() << CharCategory::LBrace;
 
@@ -103,7 +103,7 @@ public:
 
     indent();
 
-    backend() << str << CharCategory::Colon << CharCategory::Space;
+    backend() << CharCategory::DoubleQuote <<  str << CharCategory::DoubleQuote  << CharCategory::Colon << CharCategory::Space;
 
     update(WriterState::WroteObjectKey);
   }
@@ -126,7 +126,7 @@ public:
 
   void start_array()
   {
-    wroteArraySeparator();
+    writeArraySeparator();
 
     backend() << CharCategory::LBracket;
 
@@ -186,7 +186,7 @@ protected:
       update(WriterState::WroteObjectValue);
   }
 
-  void wroteArraySeparator()
+  void writeArraySeparator()
   {
     if (state() == WriterState::WroteArrayValue)
     {
