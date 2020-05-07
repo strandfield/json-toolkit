@@ -82,7 +82,18 @@ struct DefaultWriterBackend
 
   DefaultWriterBackend& operator<<(const std::string& str)
   {
-    result_ << str;
+    for (char c : str)
+    {
+      if (c == '\\')
+        result_ << "\\\\";
+      else if (c == '\n')
+        result_ << "\\n";
+      else if (c == '\t')
+        result_ << "\\t";
+      else
+        result_ << c;
+    }
+
     return *this;
   }
 };
