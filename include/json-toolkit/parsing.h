@@ -770,7 +770,9 @@ struct DefaultTokenizerBackend
     if ('!' <= c && c <= '/')
       return CharCategory::Other;
 
-    return CharCategory::Invalid;
+    // Is there any invalid character in a JSON stream ?
+    // return CharCategory::Invalid;
+    return CharCategory::Other;
   }
 
   static bool is_null(const string_type& str)
