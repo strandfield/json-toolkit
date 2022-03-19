@@ -87,6 +87,8 @@ enum class TokenizerState {
   ParsingExponent,
   ParsingSingleQuoteString,
   ParsingDoubleQuoteString,
+  ParsingSingleQuoteStringEscape,
+  ParsingDoubleQuoteStringEscape,
 };
 
 template<typename Backend>
@@ -127,6 +129,8 @@ public:
     case TokenizerState::ParsingExponent: return StateParsingExponent(c, cc);
     case TokenizerState::ParsingSingleQuoteString: return StateParsingSingleQuoteString(c, cc);
     case TokenizerState::ParsingDoubleQuoteString: return StateParsingDoubleQuoteString(c, cc);
+    case TokenizerState::ParsingSingleQuoteStringEscape: return StateParsingSingleQuoteStringEscape(c, cc);
+    case TokenizerState::ParsingDoubleQuoteStringEscape: return StateParsingDoubleQuoteStringEscape(c, cc);
     }
   }
 
@@ -421,6 +425,9 @@ protected:
       produce(TokenType::StringLiteral);
       enter(TokenizerState::Idle);
       return;
+    case CharCategory::Escape:
+      enter(TokenizerState::ParsingSingleQuoteStringEscape);
+      return;
     case CharCategory::NewLine:
       throw std::runtime_error{ "Invalid input 'NewLine' in 'ParsingSingleQuoteString' state" };
     default:
@@ -438,12 +445,45 @@ protected:
       produce(TokenType::StringLiteral);
       enter(TokenizerState::Idle);
       return;
+    case CharCategory::Escape:
+      enter(TokenizerState::ParsingDoubleQuoteStringEscape);
+      return;
     case CharCategory::NewLine:
       throw std::runtime_error{ "Invalid input 'NewLine' in 'ParsingDoubleQuoteString' state" };
     default:
       push(c);
       return;
     }
+  }
+
+  static char unescaped(char c)
+  {
+    if (c == 'n')
+      return '\n';
+    else if (c == 'r')
+      return '\r';
+    else if (c == 't')
+      return '\t';
+    else if (c == '"')
+      return '"';
+    else if (c == '\'')
+      return '\'';
+    else if (c == '\\')
+      return '\\';
+    else
+      throw std::runtime_error(std::string("Could not unescape char: ") + c);
+  }
+
+  void StateParsingSingleQuoteStringEscape(Char c, CharCategory cc)
+  {
+    push(unescaped(c));
+    enter(TokenizerState::ParsingSingleQuoteString);
+  }
+
+  void StateParsingDoubleQuoteStringEscape(Char c, CharCategory cc)
+  {
+    push(unescaped(c));
+    enter(TokenizerState::ParsingDoubleQuoteString);
   }
 
 private:
@@ -461,7 +501,7 @@ struct ParserBackend
 {
   static int parse_integer(const std::string& str);
   static double parse_number(const std::string& str);
-  static std::string remove_quotes(const std::string& str);
+  static std::string unquote(const std::string& str);
 
   void value(std::nullptr_t);
   void value(bool val);
@@ -570,7 +610,7 @@ protected:
       update(ParserState::ReadFieldName);
       return;
     case TokenType::StringLiteral:
-      m_backend.key(m_backend.remove_quotes(tok.text));
+      m_backend.key(m_backend.unquote(tok.text));
       update(ParserState::ReadFieldName);
       return;
     case TokenType::RBrace:
@@ -626,7 +666,7 @@ protected:
       update(ParserState::ReadFieldValue);
       return;
     case TokenType::StringLiteral:
-      m_backend.value(m_backend.remove_quotes(tok.text));
+      m_backend.value(m_backend.unquote(tok.text));
       update(ParserState::ReadFieldValue);
       return;
     default:
@@ -682,7 +722,7 @@ protected:
       update(ParserState::ReadArrayElement);
       return;
     case TokenType::StringLiteral:
-      m_backend.value(m_backend.remove_quotes(tok.text));
+      m_backend.value(m_backend.unquote(tok.text));
       update(ParserState::ReadArrayElement);
       return;
     case TokenType::RBracket:
@@ -758,6 +798,7 @@ struct DefaultTokenizerBackend
     case '+': return CharCategory::PlusSign;
     case '-': return CharCategory::MinusSign;
     case '_': return CharCategory::Underscore;
+    case '\\': return CharCategory::Escape;
     default:
       break;
     }
@@ -837,7 +878,7 @@ struct DefaultParserBackend
     return std::stod(str);
   }
 
-  static std::string remove_quotes(const std::string& str)
+  static std::string unquote(std::string str)
   {
     return std::string(str.begin() + 1, str.end() - 1);
   }

@@ -186,6 +186,31 @@ TEST(parsing, parser_machine_string_2)
   ASSERT_EQ(vec.at(4), 3.14);
 }
 
+TEST(parsing, parser_machine_string_3)
+{
+  using namespace json;
+
+  std::string input = " ['\\\'\\n\\r\\t\\\"\\\\'] ";
+
+  Tokenizer<DefaultTokenizerBackend> tokenizer;
+  auto& buffer = tokenizer.backend().token_buffer;
+  tokenizer.write(input);
+
+  ParserMachine<DefaultParserBackend> parser;
+
+  for (const auto& tok : buffer)
+    parser.write(tok);
+
+  ASSERT_TRUE(parser.state() == ParserState::Idle);
+  ASSERT_EQ(parser.backend().stack.size(), 1);
+  ASSERT_TRUE(parser.backend().stack.front().isArray());
+
+  json::Array vec = parser.backend().stack.front().toArray();
+
+  ASSERT_EQ(vec.length(), 1);
+  ASSERT_EQ(vec.at(0).toString(), "'\n\r\t\"\\");
+}
+
 TEST(parsing, parser_machine_exceptions)
 {
   using namespace json;
